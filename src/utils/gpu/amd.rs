@@ -182,7 +182,28 @@ impl GpuImpl for AmdGpu {
     }
 
     fn vram_frequency(&self) -> Result<f64> {
-        self.hwmon_vram_frequency()
+        if let Ok(freq) = self.hwmon_vram_frequency() {
+            return Ok(freq);
+        }
+        // Raven/Picasso APUs expose the memory clock (MCLK) as a DPM state
+        // list instead of a hwmon freq2_input entry. Parse the currently
+        // selected ("*") state, e.g. "3: 1200Mhz *".
+        let states =
+            read_parsed::<String>(self.sysfs_path().join("device/pp_dpm_mclk"))?;
+        for line in states.lines() {
+            if !line.contains('*') {
+                continue;
+            }
+            if let Some(number) = line
+                .split(':')
+                .nth(1)
+                .and_then(|s| s.split_whitespace().next())
+                .and_then(|s| s.trim_end_matches("Mhz").trim().parse::<f64>().ok())
+            {
+                return Ok(number * 1_000_000.0);
+            }
+        }
+        bail!("no current MCLK DPM state found")
     }
 
     fn power_cap(&self) -> Result<f64> {
