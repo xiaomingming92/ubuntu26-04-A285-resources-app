@@ -1371,6 +1371,7 @@ dependencies = [
  "rmp-serde",
  "ron",
  "rust-ini",
+ "serde",
  "serde_json",
  "soup3",
  "strum",

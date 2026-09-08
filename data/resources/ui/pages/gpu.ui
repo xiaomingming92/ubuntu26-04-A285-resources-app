@@ -59,6 +59,24 @@
                         <property name="subtitle-selectable">true</property>
                       </object>
                     </child>
+                    <child>
+                      <object class="AdwActionRow" id="smu_slow_power">
+                        <property name="title" translatable="yes">Average Power (PPT Slow)</property>
+                        <style>
+                          <class name="property"/>
+                        </style>
+                        <property name="subtitle-selectable">true</property>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="AdwActionRow" id="smu_stapm_power">
+                        <property name="title" translatable="yes">Sustained Power (STAPM)</property>
+                        <style>
+                          <class name="property"/>
+                        </style>
+                        <property name="subtitle-selectable">true</property>
+                      </object>
+                    </child>
                   </object>
                 </child>
                 <child>

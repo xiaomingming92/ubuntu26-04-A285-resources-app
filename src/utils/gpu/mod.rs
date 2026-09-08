@@ -24,6 +24,7 @@ use crate::{
     i18n::i18n,
     utils::{pci::Device, read_uevent},
 };
+use crate::utils::smu::AmdSmuMetrics;
 use glob::glob;
 
 use super::pci::Vendor;
@@ -58,6 +59,9 @@ pub struct GpuData {
     pub power_cap: Option<f64>,
     pub power_cap_max: Option<f64>,
 
+    /// Power metrics read from the AMD SMU through RyzenAdj (APUs only).
+    pub smu_metrics: Option<AmdSmuMetrics>,
+
     pub link: Option<Link>,
 
     pub nvidia: bool,
@@ -83,8 +87,31 @@ impl GpuData {
 
         let temperature = gpu.temperature().ok();
 
-        let power_usage = gpu.power_usage().ok();
-        let power_cap = gpu.power_cap().ok();
+        let mut power_usage = gpu.power_usage().ok();
+
+        // AMD APUs (e.g. Raven Ridge) don't export power1_average through
+        // hwmon, but the SMU can report the same information. Query it through
+        // the companion process only when hwmon couldn't provide a reading.
+        let smu_metrics = if matches!(gpu, Gpu::Amd(_)) && power_usage.is_none() {
+            let metrics = crate::utils::smu::read_metrics();
+            if metrics.is_empty() {
+                None
+            } else {
+                Some(metrics)
+            }
+        } else {
+            None
+        };
+
+        if power_usage.is_none() {
+            power_usage = smu_metrics.as_ref().and_then(|metrics| metrics.ppt_fast_value_w);
+        }
+
+        let mut power_cap = gpu.power_cap().ok();
+        if power_cap.is_none() {
+            power_cap = smu_metrics.as_ref().and_then(|metrics| metrics.ppt_fast_limit_w);
+        }
+
         let power_cap_max = gpu.power_cap_max().ok();
 
         let link = gpu.link().ok();
@@ -104,6 +131,7 @@ impl GpuData {
             power_usage,
             power_cap,
             power_cap_max,
+            smu_metrics,
             link,
             nvidia,
         };

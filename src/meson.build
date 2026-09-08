@@ -112,3 +112,18 @@ copy_adjust_binary = custom_target(
     '@OUTPUT@',
   ],
 )
+
+copy_amdgpu_sensors_binary = custom_target(
+  'cp-amdgpu-sensors-binary',
+  depends: cargo_build,
+  build_by_default: true,
+  build_always_stale: true,
+  install: true,
+  install_dir: libexecdir,
+  output: meson.project_name() + '-amdgpu-sensors',
+  command: [
+    'cp',
+    'src' / rust_target / meson.project_name() + '-amdgpu-sensors',
+    '@OUTPUT@',
+  ],
+)

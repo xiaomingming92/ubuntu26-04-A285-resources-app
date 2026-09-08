@@ -46,6 +46,10 @@ mod imp {
         #[template_child]
         pub power_usage: TemplateChild<adw::ActionRow>,
         #[template_child]
+        pub smu_slow_power: TemplateChild<adw::ActionRow>,
+        #[template_child]
+        pub smu_stapm_power: TemplateChild<adw::ActionRow>,
+        #[template_child]
         pub gpu_clockspeed: TemplateChild<adw::ActionRow>,
         #[template_child]
         pub vram_clockspeed: TemplateChild<adw::ActionRow>,
@@ -107,6 +111,8 @@ mod imp {
                 vram_usage: Default::default(),
                 temperature: Default::default(),
                 power_usage: Default::default(),
+                smu_slow_power: Default::default(),
+                smu_stapm_power: Default::default(),
                 gpu_clockspeed: Default::default(),
                 vram_clockspeed: Default::default(),
                 manufacturer: Default::default(),
@@ -264,6 +270,11 @@ impl ResGPU {
             imp.encode_decode_usage.set_visible(true);
         }
 
+        // The RyzenAdj-backed rows are only relevant on AMD APUs that don't
+        // report power through hwmon.
+        imp.smu_slow_power.set_visible(false);
+        imp.smu_stapm_power.set_visible(false);
+
         if let Ok(model_name) = gpu.name() {
             imp.set_tab_detail_string(&model_name);
         }
@@ -291,6 +302,7 @@ impl ResGPU {
             power_usage,
             power_cap,
             power_cap_max,
+            smu_metrics,
             link,
             nvidia: _,
         } = gpu_data;
@@ -348,6 +360,24 @@ impl ResGPU {
 
         imp.power_usage.set_subtitle(&power_string);
 
+        if let Some(metrics) = smu_metrics {
+            imp.power_usage.set_title(&i18n("Current Power (PPT Fast)"));
+
+            imp.smu_slow_power.set_subtitle(&power_with_limit(
+                metrics.ppt_slow_value_w,
+                metrics.ppt_slow_limit_w,
+            ));
+            imp.smu_slow_power.set_visible(true);
+
+            imp.smu_stapm_power.set_subtitle(&power_with_limit(
+                metrics.stapm_value_w,
+                metrics.stapm_limit_w,
+            ));
+            imp.smu_stapm_power.set_visible(true);
+        } else {
+            imp.power_usage.set_title(&i18n("Power Usage"));
+        }
+
         set_subtitle_converted_maybe(*clock_speed, convert_frequency, &imp.gpu_clockspeed);
 
         set_subtitle_converted_maybe(*vram_speed, convert_frequency, &imp.vram_clockspeed);
@@ -363,5 +393,18 @@ impl ResGPU {
             "tab_usage_string",
             gpu_npu_usage_string(*usage_fraction, *used_vram, *total_vram, *temperature),
         );
+    }
+}
+
+fn power_with_limit(value: Option<f64>, limit: Option<f64>) -> String {
+    match value {
+        Some(value) => {
+            let mut string = convert_power(value);
+            if let Some(limit) = limit {
+                let _ = write!(string, " / {}", convert_power(limit));
+            }
+            string
+        }
+        None => i18n("N/A"),
     }
 }
