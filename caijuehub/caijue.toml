@@ -1,0 +1,19 @@
+# ============================================================
+# Resources 集中裁决层 (Caijue Hub) — 策略索引
+# ============================================================
+# 规则 TOML 是真源；transcribe.py 生成 src/caijuehub/strategies/*.strategy.rs。
+# 新增裁决入口：1) 新建 *-rules.toml
+#                2) 在 transcribe.py 增加生成器
+#                3) 在本文件注册 [[caijue]]
+#                4) python3 caijuehub/transcribe.py
+#                5) 业务代码导入生成的 strategy
+# ============================================================
+
+[[caijue]]
+id = "amd-sensor-adjudication"
+type = "strategy"
+description = "AMD APU 传感器裁决：hwmon 缺功耗读数时是否查询 SMU、回退到哪个 SMU 指标、helper 路径与采样节拍"
+rules = "sensor-rules.toml"
+implementation = "src/caijuehub/strategies/sensor.strategy.rs"
+line_type = "rust-strategy"
+approval = "auto"

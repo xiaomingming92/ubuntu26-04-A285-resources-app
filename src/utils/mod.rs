@@ -19,7 +19,6 @@ pub mod os;
 pub mod pci;
 pub mod process;
 pub mod settings;
-pub mod smu;
 mod snapd;
 pub mod units;
 

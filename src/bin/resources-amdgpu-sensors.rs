@@ -6,9 +6,12 @@ use std::{
 };
 
 use anyhow::{Context, Result, bail};
-use resources::utils::smu::AmdSmuMetrics;
-
-const DEFAULT_RYZENADJ: &str = "/usr/local/bin/ryzenadj";
+use resources::{
+    caijuehub::{
+        smu::AmdSmuMetrics,
+        strategies::sensor::RYZENADJ_PATH as DEFAULT_RYZENADJ,
+    },
+};
 
 fn parse_ryzenadj_info(stdout: &str) -> AmdSmuMetrics {
     let mut metrics = AmdSmuMetrics::default();

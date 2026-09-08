@@ -11,9 +11,11 @@ use std::{
     },
 };
 
-use crate::{config::LIBEXECDIR, utils::IS_FLATPAK};
-
-pub const RYZENADJ_PATH: &str = "/usr/local/bin/ryzenadj";
+use crate::{
+    caijuehub::strategies::sensor,
+    config::LIBEXECDIR,
+    utils::IS_FLATPAK,
+};
 
 /// Power metrics read from the AMD SMU through RyzenAdj.
 ///
@@ -41,6 +43,21 @@ impl AmdSmuMetrics {
             && self.ppt_fast_value_w.is_none()
             && self.ppt_slow_limit_w.is_none()
             && self.ppt_slow_value_w.is_none()
+    }
+
+    /// Returns one of the metric names declared in `sensor-rules.toml`
+    /// (e.g. `"ppt_fast_value"`, `"stapm_limit"`).
+    #[must_use]
+    pub fn metric(&self, metric: &str) -> Option<f64> {
+        match metric {
+            "stapm_limit" => self.stapm_limit_w,
+            "stapm_value" => self.stapm_value_w,
+            "ppt_fast_limit" => self.ppt_fast_limit_w,
+            "ppt_fast_value" => self.ppt_fast_value_w,
+            "ppt_slow_limit" => self.ppt_slow_limit_w,
+            "ppt_slow_value" => self.ppt_slow_value_w,
+            _ => None,
+        }
     }
 }
 
@@ -86,11 +103,15 @@ fn spawn_companion() -> Result<AmdSmuProcess> {
         bail!("AMD SMU companion process is not supported in Flatpak mode");
     }
 
-    let helper_path = format!("{LIBEXECDIR}/resources-amdgpu-sensors");
+    let helper_path = format!("{LIBEXECDIR}/{}", sensor::SMU_HELPER_NAME);
     debug!("Spawning AMD SMU companion process ({helper_path})…");
 
     let mut child = Command::new("pkexec")
-        .args(["--disable-internal-agent", helper_path.as_str(), RYZENADJ_PATH])
+        .args([
+            "--disable-internal-agent",
+            helper_path.as_str(),
+            sensor::RYZENADJ_PATH,
+        ])
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::null())
@@ -108,6 +129,10 @@ fn spawn_companion() -> Result<AmdSmuProcess> {
 /// This returns an empty [`AmdSmuMetrics`] (instead of an error) whenever the
 /// companion is unavailable, so callers can simply display “N/A”.
 pub fn read_metrics() -> AmdSmuMetrics {
+    if !sensor::SMU_ENABLED {
+        return AmdSmuMetrics::default();
+    }
+
     if SMU_COMPANION_DISABLED.load(Ordering::Relaxed) {
         return AmdSmuMetrics::default();
     }

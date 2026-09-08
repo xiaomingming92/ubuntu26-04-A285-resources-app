@@ -1,0 +1,26 @@
+# ============================================================
+# AMD 传感器裁决规则（真源）
+# ============================================================
+# 修改规则后运行：python3 caijuehub/transcribe.py
+# 生成文件勿手改：src/caijuehub/strategies/sensor.strategy.rs
+
+[smu]
+# 只在 AMD GPU 的 hwmon 没有功耗读数时才动 SMU（Raven/Picasso 等 APU）
+enabled = true
+query_when_amd_hwmon_power_missing = true
+
+# 采样由 Resources 刷新请求驱动：探针频率与 Resources 的刷新频率一致
+refresh = "follow-ui-refresh"
+
+# helper 由 Resources 安装进 libexec，RyzenAdj 为读取 SMU 的外部命令
+helper_name = "resources-amdgpu-sensors"
+ryzenadj_path = "/usr/local/bin/ryzenadj"
+
+[smu.power_fallback]
+# hwmon 功耗缺失时，"Power Usage" 行回退到 PPT Fast 实际值及其限值
+value_metric = "ppt_fast_value"
+cap_metric = "ppt_fast_limit"
+
+[gpu_page]
+# 是否显示 PPT Slow / STAPM 两行补充功率（对应 Power Usage 的 PPT Fast）
+show_slow_and_stapm_rows = true

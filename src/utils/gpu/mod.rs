@@ -24,7 +24,7 @@ use crate::{
     i18n::i18n,
     utils::{pci::Device, read_uevent},
 };
-use crate::utils::smu::AmdSmuMetrics;
+use crate::caijuehub::{smu::AmdSmuMetrics, strategies::sensor};
 use glob::glob;
 
 use super::pci::Vendor;
@@ -92,8 +92,11 @@ impl GpuData {
         // AMD APUs (e.g. Raven Ridge) don't export power1_average through
         // hwmon, but the SMU can report the same information. Query it through
         // the companion process only when hwmon couldn't provide a reading.
-        let smu_metrics = if matches!(gpu, Gpu::Amd(_)) && power_usage.is_none() {
-            let metrics = crate::utils::smu::read_metrics();
+        let smu_metrics = if matches!(gpu, Gpu::Amd(_))
+            && power_usage.is_none()
+            && sensor::SMU_QUERY_ON_AMD_MISSING_HWMON_POWER
+        {
+            let metrics = crate::caijuehub::smu::read_metrics();
             if metrics.is_empty() {
                 None
             } else {
@@ -104,12 +107,12 @@ impl GpuData {
         };
 
         if power_usage.is_none() {
-            power_usage = smu_metrics.as_ref().and_then(|metrics| metrics.ppt_fast_value_w);
+            power_usage = smu_metrics.as_ref().and_then(sensor::fallback_power_usage);
         }
 
         let mut power_cap = gpu.power_cap().ok();
         if power_cap.is_none() {
-            power_cap = smu_metrics.as_ref().and_then(|metrics| metrics.ppt_fast_limit_w);
+            power_cap = smu_metrics.as_ref().and_then(sensor::fallback_power_cap);
         }
 
         let power_cap_max = gpu.power_cap_max().ok();

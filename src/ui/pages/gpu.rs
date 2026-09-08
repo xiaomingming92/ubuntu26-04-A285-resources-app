@@ -4,6 +4,7 @@ use log::trace;
 use process_data::gpu_usage::GpuIdentifier;
 use std::fmt::Write;
 
+use crate::caijuehub::strategies::sensor;
 use crate::config::PROFILE;
 use crate::i18n::i18n;
 use crate::ui::{gpu_npu_usage_string, set_subtitle_converted_maybe};
@@ -361,21 +362,29 @@ impl ResGPU {
         imp.power_usage.set_subtitle(&power_string);
 
         if let Some(metrics) = smu_metrics {
-            imp.power_usage.set_title(&i18n("Current Power (PPT Fast)"));
+            if sensor::GPU_PAGE_SHOW_SLOW_AND_STAPM_ROWS {
+                imp.power_usage.set_title(&i18n("Current Power (PPT Fast)"));
 
-            imp.smu_slow_power.set_subtitle(&power_with_limit(
-                metrics.ppt_slow_value_w,
-                metrics.ppt_slow_limit_w,
-            ));
-            imp.smu_slow_power.set_visible(true);
+                imp.smu_slow_power.set_subtitle(&power_with_limit(
+                    metrics.ppt_slow_value_w,
+                    metrics.ppt_slow_limit_w,
+                ));
+                imp.smu_slow_power.set_visible(true);
 
-            imp.smu_stapm_power.set_subtitle(&power_with_limit(
-                metrics.stapm_value_w,
-                metrics.stapm_limit_w,
-            ));
-            imp.smu_stapm_power.set_visible(true);
+                imp.smu_stapm_power.set_subtitle(&power_with_limit(
+                    metrics.stapm_value_w,
+                    metrics.stapm_limit_w,
+                ));
+                imp.smu_stapm_power.set_visible(true);
+            } else {
+                imp.power_usage.set_title(&i18n("Power Usage"));
+                imp.smu_slow_power.set_visible(false);
+                imp.smu_stapm_power.set_visible(false);
+            }
         } else {
             imp.power_usage.set_title(&i18n("Power Usage"));
+            imp.smu_slow_power.set_visible(false);
+            imp.smu_stapm_power.set_visible(false);
         }
 
         set_subtitle_converted_maybe(*clock_speed, convert_frequency, &imp.gpu_clockspeed);
