@@ -1,0 +1,1327 @@
+pub mod process_entry;
+mod process_name_cell;
+
+use std::collections::HashSet;
+use std::sync::LazyLock;
+
+use adw::ResponseAppearance;
+use adw::{prelude::*, subclass::prelude::*};
+use async_channel::Sender;
+use gtk::accessible::Property;
+use gtk::glib::{self, MainContext, Object, clone, closure};
+use gtk::{
+    BitsetIter, ColumnView, ColumnViewColumn, EventControllerKey, FilterChange, ListItem,
+    NumericSorter, SortType, StringSorter, Widget, gio,
+};
+use process_data::Niceness;
+
+use crate::add_column;
+use crate::config::PROFILE;
+use crate::i18n::{i18n, i18n_f, ni18n_f};
+use crate::ui::dialogs::process_dialog::ResProcessDialog;
+use crate::ui::dialogs::process_options_dialog::ResProcessOptionsDialog;
+use crate::ui::pages::{
+    MAX_PERCENTAGE_LENGTH, MAX_PID_LENGTH, MAX_SPEED_LENGTH, MAX_STORAGE_LENGTH, NICE_TO_LABEL,
+};
+use crate::ui::window::{Action, MainWindow};
+use crate::utils::NUM_CPUS;
+use crate::utils::app::AppsContext;
+use crate::utils::process::ProcessAction;
+use crate::utils::settings::SETTINGS;
+use crate::utils::units::{convert_speed, convert_storage, format_time};
+
+use self::process_entry::ProcessEntry;
+use self::process_name_cell::ResProcessNameCell;
+
+pub const TAB_ID: &str = "processes";
+
+static LONGEST_PRIORITY_LABEL: LazyLock<u32> = LazyLock::new(|| {
+    // make sure that no matter how short the longest current locale's translation for a priority may be, a signed
+    // two-digit number (+ 1 for more space) will always fit
+    let min_length = 4;
+    let calulated = NICE_TO_LABEL
+        .values()
+        .map(|(s, _)| s.len())
+        .max()
+        .unwrap_or(13) as u32;
+
+    if calulated > min_length {
+        calulated
+    } else {
+        min_length
+    }
+});
+
+const MAX_TIME_LENGTH: u32 = 12; // e.g. "123:45:67.69"
+
+mod imp {
+    use std::{
+        cell::{Cell, RefCell},
+        sync::OnceLock,
+    };
+
+    use crate::{
+        ui::{
+            dialogs::process_options_dialog::ResProcessOptionsDialog, pages::PROCESSES_PRIMARY_ORD,
+            window::Action,
+        },
+        utils::process::ProcessAction,
+    };
+
+    use super::*;
+
+    use gtk::{
+        CompositeTemplate,
+        gio::{Icon, ThemedIcon},
+        glib::{ParamSpec, Properties, Value},
+    };
+
+    #[derive(CompositeTemplate, Properties)]
+    #[properties(wrapper_type = super::ResProcesses)]
+    #[template(resource = "/net/nokyan/Resources/ui/pages/processes.ui")]
+    pub struct ResProcesses {
+        #[template_child]
+        pub toast_overlay: TemplateChild<adw::ToastOverlay>,
+        #[template_child]
+        pub popover_menu: TemplateChild<gtk::PopoverMenu>,
+        #[template_child]
+        pub popover_menu_multiple: TemplateChild<gtk::PopoverMenu>,
+        #[template_child]
+        pub search_bar: TemplateChild<gtk::SearchBar>,
+        #[template_child]
+        pub search_entry: TemplateChild<gtk::SearchEntry>,
+        #[template_child]
+        pub processes_scrolled_window: TemplateChild<gtk::ScrolledWindow>,
+        #[template_child]
+        pub options_button: TemplateChild<gtk::Button>,
+        #[template_child]
+        pub information_button: TemplateChild<gtk::Button>,
+        #[template_child]
+        pub end_process_button: TemplateChild<adw::SplitButton>,
+        #[template_child]
+        pub end_process_menu: TemplateChild<gio::MenuModel>,
+        #[template_child]
+        pub end_process_menu_multiple: TemplateChild<gio::MenuModel>,
+        pub store: RefCell<gio::ListStore>,
+        pub selection_model: RefCell<gtk::MultiSelection>,
+        pub filter_model: RefCell<gtk::FilterListModel>,
+        pub sort_model: RefCell<gtk::SortListModel>,
+        pub column_view: RefCell<gtk::ColumnView>,
+
+        pub open_info_dialog: RefCell<Option<(i32, ResProcessDialog)>>,
+        pub open_options_dialog: RefCell<Option<(i32, ResProcessOptionsDialog)>>,
+
+        pub info_dialog_closed: Cell<bool>,
+        pub options_dialog_closed: Cell<bool>,
+
+        pub sender: OnceLock<Sender<Action>>,
+
+        pub popped_over_process: RefCell<Option<ProcessEntry>>,
+
+        pub columns: RefCell<Vec<ColumnViewColumn>>,
+
+        #[property(get)]
+        uses_progress_bar: Cell<bool>,
+
+        #[property(get)]
+        icon: RefCell<Icon>,
+
+        #[property(get = Self::tab_name, type = glib::GString)]
+        tab_name: Cell<glib::GString>,
+
+        #[property(get = Self::tab_detail_string, type = glib::GString)]
+        tab_detail_string: Cell<glib::GString>,
+
+        #[property(get = Self::tab_usage_string, set = Self::set_tab_usage_string, type = glib::GString)]
+        tab_usage_string: Cell<glib::GString>,
+
+        #[property(get = Self::tab_id, type = glib::GString)]
+        tab_id: Cell<glib::GString>,
+
+        #[property(get)]
+        graph_locked_max_y: Cell<bool>,
+
+        #[property(get)]
+        primary_ord: Cell<u32>,
+
+        #[property(get)]
+        secondary_ord: Cell<u32>,
+    }
+
+    impl ResProcesses {
+        gstring_getter_setter!(tab_name, tab_detail_string, tab_usage_string, tab_id);
+    }
+
+    impl Default for ResProcesses {
+        fn default() -> Self {
+            Self {
+                toast_overlay: Default::default(),
+                popover_menu: Default::default(),
+                popover_menu_multiple: Default::default(),
+                search_bar: Default::default(),
+                search_entry: Default::default(),
+                processes_scrolled_window: Default::default(),
+                options_button: Default::default(),
+                information_button: Default::default(),
+                end_process_button: Default::default(),
+                end_process_menu: Default::default(),
+                end_process_menu_multiple: Default::default(),
+                store: gio::ListStore::new::<ProcessEntry>().into(),
+                selection_model: RefCell::new(glib::object::Object::new::<gtk::MultiSelection>()),
+                filter_model: Default::default(),
+                sort_model: Default::default(),
+                column_view: Default::default(),
+                open_info_dialog: Default::default(),
+                open_options_dialog: Default::default(),
+                info_dialog_closed: Default::default(),
+                options_dialog_closed: Default::default(),
+                sender: Default::default(),
+                uses_progress_bar: Cell::new(false),
+                icon: RefCell::new(ThemedIcon::new("generic-process-symbolic").into()),
+                tab_name: Cell::new(glib::GString::from(i18n("Processes"))),
+                tab_detail_string: Cell::new(glib::GString::new()),
+                tab_usage_string: Cell::new(glib::GString::new()),
+                tab_id: Cell::new(glib::GString::from(TAB_ID)),
+                popped_over_process: Default::default(),
+                columns: Default::default(),
+                graph_locked_max_y: Cell::new(true),
+                primary_ord: Cell::new(PROCESSES_PRIMARY_ORD),
+                secondary_ord: Default::default(),
+            }
+        }
+    }
+
+    #[glib::object_subclass]
+    impl ObjectSubclass for ResProcesses {
+        const NAME: &'static str = "ResProcesses";
+        type Type = super::ResProcesses;
+        type ParentType = adw::Bin;
+
+        fn class_init(klass: &mut Self::Class) {
+            klass.install_action(
+                "processes.context-end-process",
+                None,
+                move |res_processes, _, _| {
+                    if let Some(process_entry) =
+                        res_processes.imp().popped_over_process.borrow().as_ref()
+                    {
+                        res_processes.open_process_action_dialog(
+                            vec![process_entry.clone()],
+                            ProcessAction::TERM,
+                        );
+                    }
+                },
+            );
+
+            klass.install_action(
+                "processes.context-kill-process",
+                None,
+                move |res_processes, _, _| {
+                    if let Some(process_entry) =
+                        res_processes.imp().popped_over_process.borrow().as_ref()
+                    {
+                        res_processes.open_process_action_dialog(
+                            vec![process_entry.clone()],
+                            ProcessAction::KILL,
+                        );
+                    }
+                },
+            );
+
+            klass.install_action(
+                "processes.context-halt-process",
+                None,
+                move |res_processes, _, _| {
+                    if let Some(process_entry) =
+                        res_processes.imp().popped_over_process.borrow().as_ref()
+                    {
+                        res_processes.open_process_action_dialog(
+                            vec![process_entry.clone()],
+                            ProcessAction::STOP,
+                        );
+                    }
+                },
+            );
+
+            klass.install_action(
+                "processes.context-continue-process",
+                None,
+                move |res_processes, _, _| {
+                    if let Some(process_entry) =
+                        res_processes.imp().popped_over_process.borrow().as_ref()
+                    {
+                        res_processes.open_process_action_dialog(
+                            vec![process_entry.clone()],
+                            ProcessAction::CONT,
+                        );
+                    }
+                },
+            );
+
+            klass.install_action(
+                "processes.context-information",
+                None,
+                move |res_processes, _, _| {
+                    if let Some(process_entry) =
+                        res_processes.imp().popped_over_process.borrow().as_ref()
+                    {
+                        res_processes.open_info_dialog(process_entry);
+                    }
+                },
+            );
+
+            klass.install_action(
+                "processes.context-options",
+                None,
+                move |res_processes, _, _| {
+                    if let Some(process_entry) =
+                        res_processes.imp().popped_over_process.borrow().as_ref()
+                    {
+                        res_processes.open_options_dialog(process_entry);
+                    }
+                },
+            );
+
+            klass.install_action("processes.end-process", None, move |res_processes, _, _| {
+                let selected = res_processes.get_selected_process_entries();
+                if !selected.is_empty() {
+                    res_processes.open_process_action_dialog(selected, ProcessAction::TERM);
+                }
+            });
+
+            klass.install_action(
+                "processes.kill-process",
+                None,
+                move |res_processes, _, _| {
+                    let selected = res_processes.get_selected_process_entries();
+                    if !selected.is_empty() {
+                        res_processes.open_process_action_dialog(selected, ProcessAction::KILL);
+                    }
+                },
+            );
+
+            klass.install_action(
+                "processes.halt-process",
+                None,
+                move |res_processes, _, _| {
+                    let selected = res_processes.get_selected_process_entries();
+                    if !selected.is_empty() {
+                        res_processes.open_process_action_dialog(selected, ProcessAction::STOP);
+                    }
+                },
+            );
+
+            klass.install_action(
+                "processes.continue-process",
+                None,
+                move |res_processes, _, _| {
+                    let selected = res_processes.get_selected_process_entries();
+                    if !selected.is_empty() {
+                        res_processes.open_process_action_dialog(selected, ProcessAction::CONT);
+                    }
+                },
+            );
+
+            Self::bind_template(klass);
+        }
+
+        // You must call `Widget`'s `init_template()` within `instance_init()`.
+        fn instance_init(obj: &glib::subclass::InitializingObject<Self>) {
+            obj.init_template();
+        }
+    }
+
+    impl ObjectImpl for ResProcesses {
+        fn constructed(&self) {
+            self.parent_constructed();
+            let obj = self.obj();
+
+            // Devel Profile
+            if PROFILE == "Devel" {
+                obj.add_css_class("devel");
+            }
+        }
+
+        fn properties() -> &'static [ParamSpec] {
+            Self::derived_properties()
+        }
+
+        fn set_property(&self, id: usize, value: &Value, pspec: &ParamSpec) {
+            self.derived_set_property(id, value, pspec);
+        }
+
+        fn property(&self, id: usize, pspec: &ParamSpec) -> Value {
+            self.derived_property(id, pspec)
+        }
+    }
+
+    impl WidgetImpl for ResProcesses {}
+    impl BinImpl for ResProcesses {}
+}
+
+glib::wrapper! {
+    pub struct ResProcesses(ObjectSubclass<imp::ResProcesses>)
+        @extends gtk::Widget, adw::Bin,
+        @implements gtk::Buildable, gtk::ConstraintTarget, gtk::Accessible;
+}
+
+impl Default for ResProcesses {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl ResProcesses {
+    pub fn new() -> Self {
+        glib::Object::new::<Self>()
+    }
+
+    pub fn toggle_search(&self) {
+        let imp = self.imp();
+        imp.search_bar
+            .set_search_mode(!imp.search_bar.is_search_mode());
+    }
+
+    pub fn close_search(&self) {
+        let imp = self.imp();
+        imp.search_bar.set_search_mode(false);
+    }
+
+    pub fn init(&self, sender: Sender<Action>) {
+        let imp = self.imp();
+        imp.sender.set(sender).unwrap();
+
+        self.setup_widgets();
+        self.setup_signals();
+    }
+
+    fn add_gestures(&self, item: &ListItem) {
+        let widget = item.child().unwrap();
+
+        let secondary_click = gtk::GestureClick::new();
+        secondary_click.set_button(3);
+        secondary_click.connect_released(clone!(
+            #[weak]
+            widget,
+            #[weak]
+            item,
+            #[weak(rename_to = this)]
+            self,
+            move |_, _, x, y| {
+                if let Some(entry) = item.item().and_downcast::<ProcessEntry>() {
+                    let imp = this.imp();
+
+                    let selected = this.get_selected_process_entries();
+
+                    let popover_menu = if selected.len() > 1 {
+                        &imp.popover_menu_multiple
+                    } else {
+                        &imp.popover_menu
+                    };
+
+                    *imp.popped_over_process.borrow_mut() = Some(entry);
+
+                    let position = widget
+                        .compute_point(&this, &gtk::graphene::Point::new(x as _, y as _))
+                        .unwrap();
+
+                    popover_menu.set_pointing_to(Some(&gtk::gdk::Rectangle::new(
+                        position.x().round() as i32,
+                        position.y().round() as i32,
+                        1,
+                        1,
+                    )));
+
+                    popover_menu.popup();
+                }
+            }
+        ));
+
+        widget.add_controller(secondary_click);
+    }
+
+    pub fn setup_widgets(&self) {
+        let imp = self.imp();
+
+        // i don't quite get why that's necessary
+        imp.popover_menu.set_parent(self);
+        imp.popover_menu_multiple.set_parent(self);
+
+        *imp.column_view.borrow_mut() = gtk::ColumnView::new(None::<gtk::SingleSelection>);
+
+        self.setup_columns();
+
+        let column_view = imp.column_view.borrow();
+        column_view.set_tab_behavior(gtk::ListTabBehavior::Cell);
+        let columns = imp.columns.borrow_mut();
+
+        let store = gio::ListStore::new::<ProcessEntry>();
+
+        let filter_model = gtk::FilterListModel::new(
+            Some(store.clone()),
+            Some(gtk::CustomFilter::new(clone!(
+                #[strong(rename_to = this)]
+                self,
+                move |obj| this.search_filter(obj)
+            ))),
+        );
+
+        let sort_model = gtk::SortListModel::new(Some(filter_model.clone()), column_view.sorter());
+
+        let selection_model = gtk::MultiSelection::new(Some(sort_model.clone()));
+
+        column_view.set_model(Some(&selection_model));
+
+        column_view.sort_by_column(
+            columns
+                .get(SETTINGS.processes_sort_by() as usize)
+                .or_else(|| columns.get(3)),
+            SETTINGS.processes_sort_by_ascending(),
+        );
+
+        column_view.add_css_class("resources-columnview");
+
+        *imp.store.borrow_mut() = store;
+        *imp.selection_model.borrow_mut() = selection_model;
+        *imp.sort_model.borrow_mut() = sort_model;
+        *imp.filter_model.borrow_mut() = filter_model;
+
+        imp.processes_scrolled_window.set_child(Some(&*column_view));
+    }
+
+    fn setup_columns(&self) {
+        let imp = self.imp();
+        let column_view = imp.column_view.borrow();
+        let mut columns = imp.columns.borrow_mut();
+
+        columns.push(self.add_name_column(&column_view));
+
+        columns.push(add_column!(
+            this: self,
+            column_view: column_view,
+            entry_type: ProcessEntry,
+            title: i18n("Process ID"),
+            property: pid,
+            value_type: i32,
+            min_chars: MAX_PID_LENGTH,
+            sorter: numeric,
+            convert: |v: i32| v.to_string(),
+            settings_show: processes_show_id,
+            settings_connect: connect_processes_show_id,
+        ));
+
+        columns.push(add_column!(
+            this: self,
+            column_view: column_view,
+            entry_type: ProcessEntry,
+            title: i18n("User"),
+            property: user,
+            value_type: String,
+            min_chars: 10,
+            sorter: string,
+            convert: |v: String| v,
+            settings_show: processes_show_user,
+            settings_connect: connect_processes_show_user,
+        ));
+
+        columns.push(add_column!(
+            this: self,
+            column_view: column_view,
+            entry_type: ProcessEntry,
+            title: i18n("Memory"),
+            property: memory_usage,
+            value_type: u64,
+            min_chars: MAX_STORAGE_LENGTH,
+            xalign: 1.0,
+            sorter: numeric,
+            convert: |v: u64| convert_storage(v as f64, false),
+            settings_show: processes_show_memory,
+            settings_connect: connect_processes_show_memory,
+        ));
+
+        columns.push(add_column!(
+            this: self,
+            column_view: column_view,
+            entry_type: ProcessEntry,
+            title: i18n("Processor"),
+            property: cpu_usage,
+            value_type: f32,
+            min_chars: MAX_PERCENTAGE_LENGTH,
+            xalign: 1.0,
+            sorter: numeric,
+            convert: |v: f32| {
+                let mut percentage = v * 100.0;
+                if !SETTINGS.normalize_cpu_usage() {
+                    percentage *= *NUM_CPUS as f32;
+                }
+                format!("{percentage:.1} %")
+            },
+            settings_show: processes_show_cpu,
+            settings_connect: connect_processes_show_cpu,
+        ));
+
+        columns.push(add_column!(
+            this: self,
+            column_view: column_view,
+            entry_type: ProcessEntry,
+            title: i18n("Drive Read"),
+            property: read_speed,
+            value_type: f64,
+            min_chars: MAX_SPEED_LENGTH,
+            xalign: 1.0,
+            sorter: numeric,
+            convert: |v: f64| if v == -1.0 { i18n("N/A") } else { convert_speed(v, false) },
+            settings_show: processes_show_drive_read_speed,
+            settings_connect: connect_processes_show_drive_read_speed,
+        ));
+
+        columns.push(add_column!(
+            this: self,
+            column_view: column_view,
+            entry_type: ProcessEntry,
+            title: i18n("Drive Read Total"),
+            property: read_total,
+            value_type: i64,
+            min_chars: MAX_STORAGE_LENGTH,
+            xalign: 1.0,
+            sorter: numeric,
+            convert: |v: i64| if v == -1 { i18n("N/A") } else { convert_storage(v as f64, false) },
+            settings_show: processes_show_drive_read_total,
+            settings_connect: connect_processes_show_drive_read_total,
+        ));
+
+        columns.push(add_column!(
+            this: self,
+            column_view: column_view,
+            entry_type: ProcessEntry,
+            title: i18n("Drive Write"),
+            property: write_speed,
+            value_type: f64,
+            min_chars: MAX_SPEED_LENGTH,
+            xalign: 1.0,
+            sorter: numeric,
+            convert: |v: f64| if v == -1.0 { i18n("N/A") } else { convert_speed(v, false) },
+            settings_show: processes_show_drive_write_speed,
+            settings_connect: connect_processes_show_drive_write_speed,
+        ));
+
+        columns.push(add_column!(
+            this: self,
+            column_view: column_view,
+            entry_type: ProcessEntry,
+            title: i18n("Drive Write Total"),
+            property: write_total,
+            value_type: i64,
+            min_chars: MAX_STORAGE_LENGTH,
+            xalign: 1.0,
+            sorter: numeric,
+            convert: |v: i64| if v == -1 { i18n("N/A") } else { convert_storage(v as f64, false) },
+            settings_show: processes_show_drive_write_total,
+            settings_connect: connect_processes_show_drive_write_total,
+        ));
+
+        columns.push(add_column!(
+            this: self,
+            column_view: column_view,
+            entry_type: ProcessEntry,
+            title: i18n("GPU"),
+            property: gpu_usage,
+            value_type: f32,
+            min_chars: MAX_PERCENTAGE_LENGTH,
+            xalign: 1.0,
+            sorter: numeric,
+            convert: |v: f32| format!("{:.1} %", v * 100.0),
+            settings_show: processes_show_gpu,
+            settings_connect: connect_processes_show_gpu,
+        ));
+
+        columns.push(add_column!(
+            this: self,
+            column_view: column_view,
+            entry_type: ProcessEntry,
+            title: i18n("Video Memory"),
+            property: gpu_mem_usage,
+            value_type: u64,
+            min_chars: MAX_STORAGE_LENGTH,
+            xalign: 1.0,
+            sorter: numeric,
+            convert: |v: u64| convert_storage(v as f64, false),
+            settings_show: processes_show_gpu_memory,
+            settings_connect: connect_processes_show_gpu_memory,
+        ));
+
+        columns.push(add_column!(
+            this: self,
+            column_view: column_view,
+            entry_type: ProcessEntry,
+            title: i18n("Video Encoder"),
+            property: enc_usage,
+            value_type: f32,
+            min_chars: MAX_PERCENTAGE_LENGTH,
+            xalign: 1.0,
+            sorter: numeric,
+            convert: |v: f32| format!("{:.1} %", v * 100.0),
+            settings_show: processes_show_encoder,
+            settings_connect: connect_processes_show_encoder,
+        ));
+
+        columns.push(add_column!(
+            this: self,
+            column_view: column_view,
+            entry_type: ProcessEntry,
+            title: i18n("Video Decoder"),
+            property: dec_usage,
+            value_type: f32,
+            min_chars: MAX_PERCENTAGE_LENGTH,
+            xalign: 1.0,
+            sorter: numeric,
+            convert: |v: f32| format!("{:.1} %", v * 100.0),
+            settings_show: processes_show_decoder,
+            settings_connect: connect_processes_show_decoder,
+        ));
+
+        columns.push(add_column!(
+            this: self,
+            column_view: column_view,
+            entry_type: ProcessEntry,
+            title: i18n("Total CPU Time"),
+            property: total_cpu_time,
+            value_type: f64,
+            min_chars: MAX_TIME_LENGTH,
+            sorter: numeric,
+            convert: |v: f64| format_time(v),
+            settings_show: processes_show_total_cpu_time,
+            settings_connect: connect_processes_show_total_cpu_time,
+        ));
+
+        columns.push(add_column!(
+            this: self,
+            column_view: column_view,
+            entry_type: ProcessEntry,
+            title: i18n("User CPU Time"),
+            property: user_cpu_time,
+            value_type: f64,
+            min_chars: MAX_TIME_LENGTH,
+            sorter: numeric,
+            convert: |v: f64| format_time(v),
+            settings_show: processes_show_user_cpu_time,
+            settings_connect: connect_processes_show_user_cpu_time,
+        ));
+
+        columns.push(add_column!(
+            this: self,
+            column_view: column_view,
+            entry_type: ProcessEntry,
+            title: i18n("System CPU Time"),
+            property: system_cpu_time,
+            value_type: f64,
+            min_chars: MAX_TIME_LENGTH,
+            sorter: numeric,
+            convert: |v: f64| format_time(v),
+            settings_show: processes_show_system_cpu_time,
+            settings_connect: connect_processes_show_system_cpu_time,
+        ));
+
+        columns.push(add_column!(
+            this: self,
+            column_view: column_view,
+            entry_type: ProcessEntry,
+            title: i18n("Priority"),
+            property: niceness,
+            value_type: i8,
+            min_chars: *LONGEST_PRIORITY_LABEL,
+            sorter: numeric,
+            convert: |v: i8| {
+                if SETTINGS.detailed_priority() {
+                    v.to_string()
+                } else if let Ok(niceness) = Niceness::try_from(v) {
+                    NICE_TO_LABEL
+                        .get(&niceness)
+                        .map(|(s, _)| s)
+                        .cloned()
+                        .unwrap_or_else(|| i18n("N/A"))
+                } else {
+                    i18n("N/A")
+                }
+            },
+            settings_show: processes_show_priority,
+            settings_connect: connect_processes_show_priority,
+        ));
+
+        columns.push(add_column!(
+            this: self,
+            column_view: column_view,
+            entry_type: ProcessEntry,
+            title: i18n("Swap"),
+            property: swap_usage,
+            value_type: u64,
+            min_chars: MAX_STORAGE_LENGTH,
+            xalign: 1.0,
+            sorter: numeric,
+            convert: |v: u64| convert_storage(v as f64, false),
+            settings_show: processes_show_swap,
+            settings_connect: connect_processes_show_swap,
+        ));
+
+        columns.push(add_column!(
+            this: self,
+            column_view: column_view,
+            entry_type: ProcessEntry,
+            title: i18n("Combined Memory"),
+            property: combined_memory_usage,
+            value_type: u64,
+            min_chars: MAX_STORAGE_LENGTH,
+            xalign: 1.0,
+            sorter: numeric,
+            convert: |v: u64| convert_storage(v as f64, false),
+            settings_show: processes_show_combined_memory,
+            settings_connect: connect_processes_show_combined_memory,
+        ));
+
+        columns.push(add_column!(
+            this: self,
+            column_view: column_view,
+            entry_type: ProcessEntry,
+            title: i18n("Commandline"),
+            property: commandline,
+            value_type: String,
+            min_chars: 32,
+            sorter: string,
+            convert: |v: String| v,
+            settings_show: processes_show_commandline,
+            settings_connect: connect_processes_show_commandline,
+        ));
+    }
+
+    pub fn setup_signals(&self) {
+        let imp = self.imp();
+
+        imp.end_process_button
+            .set_menu_model(Some(&imp.end_process_menu.get()));
+
+        imp.selection_model
+            .borrow()
+            .connect_selection_changed(clone!(
+                #[weak(rename_to = this)]
+                self,
+                move |model, _, _| {
+                    let imp = this.imp();
+                    let bitset = model.selection();
+
+                    imp.information_button.set_sensitive(bitset.size() == 1);
+                    imp.options_button.set_sensitive(bitset.size() == 1);
+                    imp.end_process_button.set_sensitive(bitset.size() > 0);
+
+                    if bitset.size() <= 1 {
+                        imp.end_process_button.set_label(&i18n("End Process"));
+                        imp.end_process_button
+                            .set_menu_model(Some(&imp.end_process_menu.get()));
+                    } else {
+                        imp.end_process_button.set_label(&i18n("End Processes"));
+                        imp.end_process_button
+                            .set_menu_model(Some(&imp.end_process_menu_multiple.get()));
+                    }
+                }
+            ));
+
+        imp.search_bar
+            .set_key_capture_widget(self.parent().as_ref());
+
+        imp.search_entry.connect_search_changed(clone!(
+            #[strong(rename_to = this)]
+            self,
+            move |_| {
+                let imp = this.imp();
+                if let Some(filter) = imp.filter_model.borrow().filter() {
+                    filter.changed(FilterChange::Different);
+                }
+            }
+        ));
+
+        let event_controller = EventControllerKey::new();
+        event_controller.connect_key_released(clone!(
+            #[weak(rename_to = this)]
+            self,
+            move |_, key, _, _| {
+                if key.name().unwrap_or_default() == "Escape" {
+                    this.close_search();
+                }
+            }
+        ));
+        imp.search_entry.add_controller(event_controller);
+
+        imp.options_button.connect_clicked(clone!(
+            #[weak(rename_to = this)]
+            self,
+            move |_| {
+                let imp = this.imp();
+                let bitset = imp.selection_model.borrow().selection();
+                let selection_option = imp
+                    .selection_model
+                    .borrow()
+                    .item(bitset.maximum()) // the info button is only available when only 1 item is selected, so this should be fine
+                    .map(|object| object.downcast::<ProcessEntry>().unwrap());
+                if let Some(selection) = selection_option {
+                    this.open_options_dialog(&selection);
+                }
+            }
+        ));
+
+        imp.information_button.connect_clicked(clone!(
+            #[weak(rename_to = this)]
+            self,
+            move |_| {
+                let imp = this.imp();
+                let bitset = imp.selection_model.borrow().selection();
+                let selection_option = imp
+                    .selection_model
+                    .borrow()
+                    .item(bitset.maximum()) // the info button is only available when only 1 item is selected, so this should be fine
+                    .map(|object| object.downcast::<ProcessEntry>().unwrap());
+                if let Some(selection) = selection_option {
+                    this.open_info_dialog(&selection);
+                }
+            }
+        ));
+
+        imp.end_process_button.connect_clicked(clone!(
+            #[weak(rename_to = this)]
+            self,
+            move |_| {
+                let selected = this.get_selected_process_entries();
+                if !selected.is_empty() {
+                    this.open_process_action_dialog(selected, ProcessAction::TERM);
+                }
+            }
+        ));
+
+        if let Some(column_view_sorter) = imp.column_view.borrow().sorter() {
+            column_view_sorter.connect_changed(clone!(
+                #[weak(rename_to = this)]
+                self,
+                move |sorter, _| {
+                    if let Some(sorter) = sorter.downcast_ref::<gtk::ColumnViewSorter>() {
+                        let current_column = sorter
+                            .primary_sort_column()
+                            .map(|column| column.as_ptr() as usize)
+                            .unwrap_or_default();
+
+                        let current_column_number = this
+                            .imp()
+                            .columns
+                            .borrow()
+                            .iter()
+                            .enumerate()
+                            .find(|(_, column)| column.as_ptr() as usize == current_column)
+                            .map_or(3, |(i, _)| i as u32); // 3 corresponds to the memory column
+
+                        if SETTINGS.processes_sort_by() != current_column_number {
+                            let _ = SETTINGS.set_processes_sort_by(current_column_number);
+                        }
+
+                        if SETTINGS.processes_sort_by_ascending() != sorter.primary_sort_order() {
+                            let _ = SETTINGS
+                                .set_processes_sort_by_ascending(sorter.primary_sort_order());
+                        }
+                    }
+                }
+            ));
+        }
+    }
+
+    pub fn search_bar(&self) -> &gtk::SearchBar {
+        &self.imp().search_bar
+    }
+
+    pub fn open_options_dialog(&self, process: &ProcessEntry) {
+        let imp = self.imp();
+
+        if imp.open_info_dialog.borrow().is_some() || imp.open_options_dialog.borrow().is_some() {
+            return;
+        }
+
+        imp.options_dialog_closed.set(false);
+
+        let dialog = ResProcessOptionsDialog::new();
+
+        dialog.init(
+            process,
+            imp.sender.get().unwrap().clone(),
+            &imp.toast_overlay,
+        );
+
+        dialog.connect_closed(clone!(
+            #[weak(rename_to = this)]
+            self,
+            move |_| {
+                this.imp().options_dialog_closed.set(true);
+            }
+        ));
+
+        adw::prelude::AdwDialogExt::present(&dialog, Some(&MainWindow::default()));
+
+        *imp.open_options_dialog.borrow_mut() = Some((process.pid(), dialog));
+    }
+
+    pub fn open_info_dialog(&self, process: &ProcessEntry) {
+        let imp = self.imp();
+
+        if imp.open_info_dialog.borrow().is_some() || imp.open_options_dialog.borrow().is_some() {
+            return;
+        }
+
+        imp.options_dialog_closed.set(false);
+
+        let dialog = ResProcessDialog::new();
+
+        dialog.init(process, process.user());
+
+        dialog.connect_closed(clone!(
+            #[weak(rename_to = this)]
+            self,
+            move |_| {
+                this.imp().info_dialog_closed.set(true);
+            }
+        ));
+
+        AdwDialogExt::present(&dialog, Some(&MainWindow::default()));
+
+        *imp.open_info_dialog.borrow_mut() = Some((process.pid(), dialog));
+    }
+
+    fn search_filter(&self, obj: &Object) -> bool {
+        let imp = self.imp();
+
+        let item = obj.downcast_ref::<ProcessEntry>().unwrap();
+        let item_name = item.name().to_lowercase();
+        let item_commandline = item.commandline().to_lowercase();
+
+        let lowered_search_entry_text = imp.search_entry.text().to_lowercase();
+        let search_strings: Vec<&str> = lowered_search_entry_text.split('|').collect();
+
+        !imp.search_bar.is_search_mode()
+            || search_strings.iter().any(|search_string| {
+                item_name.contains(search_string) || item_commandline.contains(search_string)
+            })
+    }
+
+    pub fn get_selected_process_entries(&self) -> Vec<ProcessEntry> {
+        let imp = self.imp();
+
+        if let Some((bitset_iter, first)) =
+            BitsetIter::init_first(&imp.selection_model.borrow().selection())
+        {
+            let mut return_vec: Vec<_> = bitset_iter
+                .filter_map(|position| {
+                    imp.selection_model
+                        .borrow()
+                        .item(position)
+                        .map(|object| object.downcast::<ProcessEntry>().unwrap())
+                })
+                .collect();
+
+            if let Some(first_process) = imp
+                .selection_model
+                .borrow()
+                .item(first)
+                .map(|object| object.downcast::<ProcessEntry>().unwrap())
+            {
+                return_vec.insert(0, first_process);
+            }
+
+            return_vec
+        } else {
+            Vec::default()
+        }
+    }
+
+    pub fn refresh_processes_list(&self, apps_context: &AppsContext) {
+        let imp = self.imp();
+
+        if imp.info_dialog_closed.get() {
+            let _ = imp.open_info_dialog.take();
+            imp.info_dialog_closed.set(false);
+        }
+
+        if imp.options_dialog_closed.get() {
+            let _ = imp.open_options_dialog.take();
+            imp.options_dialog_closed.set(false);
+        }
+
+        let store = imp.store.borrow_mut();
+        let mut info_dialog_opt = imp.open_info_dialog.borrow_mut();
+        let mut options_dialog_opt = imp.open_options_dialog.borrow_mut();
+
+        let mut pids_to_remove = HashSet::new();
+        let mut already_existing_pids = HashSet::new();
+
+        // change process entries of processes that have existed before
+        store.iter::<ProcessEntry>().flatten().for_each(|object| {
+            let item_pid = object.pid();
+            if let Some(process) = apps_context.get_process(item_pid) {
+                object.update(process);
+                if let Some((dialog_pid, dialog)) = &*info_dialog_opt {
+                    if *dialog_pid == item_pid {
+                        dialog.update(&object);
+                    }
+                }
+                already_existing_pids.insert(item_pid);
+            } else {
+                // filter out processes that have existed before but don't anymore
+                if let Some((dialog_pid, dialog)) = &*info_dialog_opt {
+                    if *dialog_pid == item_pid {
+                        AdwDialogExt::close(dialog);
+                        *info_dialog_opt = None;
+                    }
+                }
+                if let Some((dialog_pid, dialog)) = &*options_dialog_opt {
+                    if *dialog_pid == item_pid {
+                        AdwDialogExt::close(dialog);
+                        *options_dialog_opt = None;
+                    }
+                }
+                *imp.popped_over_process.borrow_mut() = None;
+                imp.popover_menu.set_visible(false);
+                pids_to_remove.insert(item_pid);
+            }
+        });
+
+        std::mem::drop(info_dialog_opt);
+        std::mem::drop(options_dialog_opt);
+
+        // remove recently deceased processes
+        store.retain(|object| {
+            !pids_to_remove.contains(&object.clone().downcast::<ProcessEntry>().unwrap().pid())
+        });
+
+        // add the newly started process to the store
+        let items: Vec<ProcessEntry> = apps_context
+            .processes_iter()
+            .filter(|process| {
+                !already_existing_pids.contains(&process.data.pid)
+                    && !pids_to_remove.contains(&process.data.pid)
+            })
+            .map(ProcessEntry::new)
+            .collect();
+        store.extend_from_slice(&items);
+
+        if let Some(sorter) = imp.column_view.borrow().sorter() {
+            sorter.changed(gtk::SorterChange::Different);
+        }
+
+        self.set_tab_usage_string(i18n_f(
+            "Running Processes: {}",
+            &[&(store.n_items()).to_string()],
+        ));
+    }
+
+    pub fn open_process_action_dialog(&self, processes: Vec<ProcessEntry>, action: ProcessAction) {
+        // Nothing too bad can happen on Continue so dont show the dialog
+        if action == ProcessAction::CONT {
+            let main_context = MainContext::default();
+            main_context.spawn_local(clone!(
+                #[weak(rename_to = this)]
+                self,
+                #[strong]
+                processes,
+                async move {
+                    let imp = this.imp();
+                    let _ = imp
+                        .sender
+                        .get()
+                        .unwrap()
+                        .send(Action::ManipulateProcesses(
+                            action,
+                            processes
+                                .iter()
+                                .map(process_entry::ProcessEntry::pid)
+                                .collect(),
+                            imp.toast_overlay.get(),
+                        ))
+                        .await;
+                }
+            ));
+            return;
+        }
+
+        let action_name = if processes.len() == 1 {
+            get_action_name(action, &processes[0].name())
+        } else {
+            get_action_name_multiple(action, processes.len())
+        };
+
+        // Confirmation dialog & warning
+        let dialog = adw::AlertDialog::builder()
+            .heading(action_name)
+            .body(get_action_warning(action))
+            .build();
+
+        dialog.add_response("yes", &get_action_description(action));
+        dialog.set_response_appearance("yes", ResponseAppearance::Destructive);
+
+        dialog.add_response("no", &i18n("Cancel"));
+        dialog.set_default_response(Some("no"));
+        dialog.set_close_response("no");
+
+        // wtf is this
+        dialog.connect_response(
+            None,
+            clone!(
+                #[weak(rename_to = this)]
+                self,
+                #[strong]
+                processes,
+                move |_, response| {
+                    if response == "yes" {
+                        let main_context = MainContext::default();
+                        main_context.spawn_local(clone!(
+                            #[weak]
+                            this,
+                            #[strong]
+                            processes,
+                            async move {
+                                let imp = this.imp();
+                                let _ = imp
+                                    .sender
+                                    .get()
+                                    .unwrap()
+                                    .send(Action::ManipulateProcesses(
+                                        action,
+                                        processes
+                                            .iter()
+                                            .map(process_entry::ProcessEntry::pid)
+                                            .collect(),
+                                        imp.toast_overlay.get(),
+                                    ))
+                                    .await;
+                            }
+                        ));
+                    }
+                }
+            ),
+        );
+
+        dialog.present(Some(&MainWindow::default()));
+    }
+
+    fn add_name_column(&self, column_view: &ColumnView) -> ColumnViewColumn {
+        let name_col_factory = gtk::SignalListItemFactory::new();
+
+        let name_col =
+            gtk::ColumnViewColumn::new(Some(&i18n("Process")), Some(name_col_factory.clone()));
+
+        name_col.set_resizable(true);
+
+        name_col.set_expand(true);
+
+        name_col_factory.connect_setup(clone!(
+            #[weak(rename_to = this)]
+            self,
+            move |_factory, item| {
+                let item = item.downcast_ref::<gtk::ListItem>().unwrap();
+
+                let row = ResProcessNameCell::new();
+
+                item.set_child(Some(&row));
+
+                item.property_expression("item")
+                    .chain_property::<ProcessEntry>("name")
+                    .bind(&row, "name", Widget::NONE);
+
+                item.property_expression("item")
+                    .chain_property::<ProcessEntry>("icon")
+                    .bind(&row, "icon", Widget::NONE);
+
+                item.property_expression("item")
+                    .chain_property::<ProcessEntry>("commandline")
+                    .bind(&row, "tooltip", Widget::NONE);
+
+                item.property_expression("item")
+                    .chain_property::<ProcessEntry>("symbolic")
+                    .bind(&row, "symbolic", Widget::NONE);
+
+                this.add_gestures(item);
+            }
+        ));
+
+        name_col_factory.connect_teardown(move |_factory, item| {
+            let item = item.downcast_ref::<gtk::ListItem>().unwrap();
+            item.set_child(None::<&ResProcessNameCell>);
+        });
+
+        let name_col_sorter = StringSorter::builder()
+            .ignore_case(true)
+            .expression(gtk::PropertyExpression::new(
+                ProcessEntry::static_type(),
+                None::<&gtk::Expression>,
+                "name",
+            ))
+            .build();
+
+        name_col.set_sorter(Some(&name_col_sorter));
+
+        column_view.append_column(&name_col);
+
+        name_col
+    }
+}
+
+fn get_action_name(action: ProcessAction, name: &str) -> String {
+    match action {
+        ProcessAction::TERM => i18n_f("End {}?", &[name]),
+        ProcessAction::STOP => i18n_f("Halt {}?", &[name]),
+        ProcessAction::KILL => i18n_f("Kill {}?", &[name]),
+        ProcessAction::CONT => i18n_f("Continue {}?", &[name]),
+    }
+}
+
+fn get_action_name_multiple(action: ProcessAction, count: usize) -> String {
+    match action {
+        ProcessAction::TERM => ni18n_f(
+            "End process?",
+            "End {} processes?",
+            count as u32,
+            &[&count.to_string()],
+        ),
+        ProcessAction::STOP => ni18n_f(
+            "Halt process?",
+            "Halt {} processes?",
+            count as u32,
+            &[&count.to_string()],
+        ),
+        ProcessAction::KILL => ni18n_f(
+            "Kill process?",
+            "Kill {} processes?",
+            count as u32,
+            &[&count.to_string()],
+        ),
+        ProcessAction::CONT => ni18n_f(
+            "Kill process?",
+            "Kill {} processes?",
+            count as u32,
+            &[&count.to_string()],
+        ),
+    }
+}
+
+fn get_action_warning(action: ProcessAction) -> String {
+    match action {
+        ProcessAction::TERM => i18n("Unsaved work might be lost."),
+        ProcessAction::STOP => i18n(
+            "Halting a process can come with serious risks such as losing data and security implications. Use with caution.",
+        ),
+        ProcessAction::KILL => i18n(
+            "Killing a process can come with serious risks such as losing data and security implications. Use with caution.",
+        ),
+        ProcessAction::CONT => String::new(),
+    }
+}
+
+fn get_action_description(action: ProcessAction) -> String {
+    match action {
+        ProcessAction::TERM => i18n("End Process"),
+        ProcessAction::STOP => i18n("Halt Process"),
+        ProcessAction::KILL => i18n("Kill Process"),
+        ProcessAction::CONT => i18n("Continue Process"),
+    }
+}

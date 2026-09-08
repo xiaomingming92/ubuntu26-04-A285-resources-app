@@ -1,0 +1,1753 @@
+# Swedish translation for resources.
+# Copyright © 2025-2026 resources's COPYRIGHT HOLDER
+# This file is distributed under the same license as the resources package.
+# Anders Jonsson <anders.jonsson@norsjovallen.se>, 2025, 2026.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: resources main\n"
+"Report-Msgid-Bugs-To: https://github.com/nokyan/resources/issues/\n"
+"POT-Creation-Date: 2026-05-09 21:14+0000\n"
+"PO-Revision-Date: 2026-05-10 20:11+0200\n"
+"Last-Translator: Anders Jonsson <anders.jonsson@norsjovallen.se>\n"
+"Language-Team: Swedish <tp-sv@listor.tp-sv.se>\n"
+"Language: sv\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Generator: Poedit 3.9\n"
+
+#: data/net.nokyan.Resources.desktop.in.in:2 data/net.nokyan.Resources.metainfo.xml.in.in:4 data/resources/ui/window.ui:22
+#: src/application.rs:272
+msgid "Resources"
+msgstr "Resurser"
+
+#. Translators: The summary should be 35 characters or less according to Flathub appstream guidelines
+#: data/net.nokyan.Resources.desktop.in.in:3 data/net.nokyan.Resources.metainfo.xml.in.in:5
+msgid "Keep an eye on system resources"
+msgstr "Håll ett öga på systemresurser"
+
+#. Translators: Search terms to find this application. Do NOT translate or localize the semicolons! The list MUST also end with a semicolon!
+#: data/net.nokyan.Resources.desktop.in.in:9
+msgid "System;Resources;Monitor;Processes;Usage;Task;Manager;CPU;RAM;Memory;GPU;Performance;Power;Battery;"
+msgstr "System;Resurser;Övervaka;Processer;Användning;Uppgift;Hanterare;CPU;Processor;RAM;Minne;GPU;Prestanda;Ström;Batteri;"
+
+#: data/net.nokyan.Resources.metainfo.xml.in.in:17
+msgid ""
+"Resources allows you to check the utilization of your system resources and control your running processes and apps. It’s "
+"designed to be user-friendly and feel right at home on a modern desktop by using GNOME’s libadwaita."
+msgstr ""
+"Resurser låter dig kontrollera användandet av ditt system och styra dina körande processer och program. Det är designat "
+"för att vara användarvänligt och kännas som hemma på ett modernt skrivbord genom att använda GNOMEs libadwaita."
+
+#: data/net.nokyan.Resources.metainfo.xml.in.in:20
+msgid "Resources supports monitoring the following components:"
+msgstr "Resurser stöder övervakning av följande komponenter:"
+
+#: data/net.nokyan.Resources.metainfo.xml.in.in:24
+msgid "CPU"
+msgstr "Processor"
+
+#: data/net.nokyan.Resources.metainfo.xml.in.in:25 data/resources/ui/dialogs/app_dialog.ui:82
+#: data/resources/ui/dialogs/process_dialog.ui:64 data/resources/ui/dialogs/settings_dialog.ui:128
+#: data/resources/ui/dialogs/settings_dialog.ui:220 data/resources/ui/window.ui:176 data/resources/ui/window.ui:183
+#: src/ui/pages/applications/mod.rs:421 src/ui/pages/memory.rs:105 src/ui/pages/memory.rs:191
+#: src/ui/pages/processes/mod.rs:531
+msgid "Memory"
+msgstr "Minne"
+
+#: data/net.nokyan.Resources.metainfo.xml.in.in:26 data/resources/ui/dialogs/app_dialog.ui:140
+#: data/resources/ui/dialogs/process_dialog.ui:118 data/resources/ui/dialogs/settings_dialog.ui:158
+#: data/resources/ui/dialogs/settings_dialog.ui:250 src/ui/pages/applications/mod.rs:511 src/ui/pages/gpu.rs:121
+#: src/ui/pages/processes/mod.rs:627 src/ui/window.rs:470
+msgid "GPU"
+msgstr "GPU"
+
+#: data/net.nokyan.Resources.metainfo.xml.in.in:27 data/resources/ui/dialogs/settings_dialog.ui:324
+msgid "Network Interfaces"
+msgstr "Nätverksgränssnitt"
+
+#: data/net.nokyan.Resources.metainfo.xml.in.in:28
+msgid "Storage Devices"
+msgstr "Lagringsenheter"
+
+#: data/net.nokyan.Resources.metainfo.xml.in.in:29
+msgid "Batteries"
+msgstr "Batterier"
+
+#: data/net.nokyan.Resources.metainfo.xml.in.in:53
+msgid "Apps page in light theme"
+msgstr "Programsida i ljust tema"
+
+#: data/net.nokyan.Resources.metainfo.xml.in.in:57
+msgid "Processes page in dark theme"
+msgstr "Processida i mörkt tema"
+
+#: data/net.nokyan.Resources.metainfo.xml.in.in:61
+msgid "Processor page in light theme"
+msgstr "Processorsida i ljust tema"
+
+#: data/net.nokyan.Resources.metainfo.xml.in.in:65
+msgid "Memory page in dark theme"
+msgstr "Minnessida i mörkt tema"
+
+#: data/net.nokyan.Resources.metainfo.xml.in.in:69
+msgid "GPU page in light theme"
+msgstr "GPU-sida i ljust tema"
+
+#: data/net.nokyan.Resources.metainfo.xml.in.in:73
+msgid "Drive page in dark theme"
+msgstr "Disksida i mörkt tema"
+
+#: data/net.nokyan.Resources.metainfo.xml.in.in:77
+msgid "Network Interface page in light theme"
+msgstr "Nätverksgränssnittssida i ljust tema"
+
+#: data/net.nokyan.Resources.metainfo.xml.in.in:81
+msgid "Battery page in dark theme"
+msgstr "Batterisida i mörkt tema"
+
+#: data/net.nokyan.Resources.policy.in.in:9
+msgid "Control Process"
+msgstr "Styrprocess"
+
+#: data/net.nokyan.Resources.policy.in.in:10
+msgid "Authentication is required to control superuser’s or other users’ processes"
+msgstr "Autentisering krävs för att styra superanvändarens eller andra användares processer"
+
+#: data/resources/ui/dialogs/app_dialog.ui:7
+msgid "App Information"
+msgstr "Programinformation"
+
+#: data/resources/ui/dialogs/app_dialog.ui:70 data/resources/ui/dialogs/process_dialog.ui:48
+#: data/resources/ui/pages/battery.ui:22 data/resources/ui/pages/cpu.ui:37 data/resources/ui/pages/cpu.ui:50
+#: data/resources/ui/pages/drive.ui:22 data/resources/ui/pages/gpu.ui:22 data/resources/ui/pages/memory.ui:31
+#: data/resources/ui/pages/network.ui:22 data/resources/ui/pages/npu.ui:22
+msgid "Usage"
+msgstr "Användning"
+
+#: data/resources/ui/dialogs/app_dialog.ui:73 data/resources/ui/dialogs/process_dialog.ui:55
+#: data/resources/ui/dialogs/settings_dialog.ui:133 data/resources/ui/dialogs/settings_dialog.ui:225
+#: data/resources/ui/window.ui:145 data/resources/ui/window.ui:152 src/ui/pages/applications/mod.rs:435
+#: src/ui/pages/cpu.rs:130 src/ui/pages/processes/mod.rs:546 src/ui/window.rs:290
+msgid "Processor"
+msgstr "Processor"
+
+#: data/resources/ui/dialogs/app_dialog.ui:91 data/resources/ui/dialogs/process_dialog.ui:73
+#: data/resources/ui/dialogs/settings_dialog.ui:178 data/resources/ui/dialogs/settings_dialog.ui:290
+#: src/ui/pages/applications/mod.rs:567 src/ui/pages/memory.rs:197 src/ui/pages/processes/mod.rs:755
+msgid "Swap"
+msgstr "Växling"
+
+#: data/resources/ui/dialogs/app_dialog.ui:100 data/resources/ui/dialogs/process_dialog.ui:78
+#: data/resources/ui/dialogs/settings_dialog.ui:138 data/resources/ui/dialogs/settings_dialog.ui:230
+#: src/ui/pages/applications/mod.rs:455 src/ui/pages/processes/mod.rs:567
+msgid "Drive Read"
+msgstr "Lästa för enhet"
+
+#: data/resources/ui/dialogs/app_dialog.ui:109 data/resources/ui/dialogs/process_dialog.ui:87
+#: data/resources/ui/dialogs/settings_dialog.ui:143 data/resources/ui/dialogs/settings_dialog.ui:235
+#: src/ui/pages/applications/mod.rs:469 src/ui/pages/processes/mod.rs:582
+msgid "Drive Read Total"
+msgstr "Totalt lästa för enhet"
+
+#: data/resources/ui/dialogs/app_dialog.ui:118 data/resources/ui/dialogs/process_dialog.ui:96
+#: data/resources/ui/dialogs/settings_dialog.ui:148 data/resources/ui/dialogs/settings_dialog.ui:240
+#: src/ui/pages/applications/mod.rs:483 src/ui/pages/processes/mod.rs:597
+msgid "Drive Write"
+msgstr "Skrivna för enhet"
+
+#: data/resources/ui/dialogs/app_dialog.ui:127 data/resources/ui/dialogs/process_dialog.ui:105
+#: data/resources/ui/dialogs/settings_dialog.ui:153 data/resources/ui/dialogs/settings_dialog.ui:245
+#: src/ui/pages/applications/mod.rs:497 src/ui/pages/processes/mod.rs:612
+msgid "Drive Write Total"
+msgstr "Totalt skrivna för enhet"
+
+#: data/resources/ui/dialogs/app_dialog.ui:149 data/resources/ui/dialogs/process_dialog.ui:127
+#: data/resources/ui/dialogs/settings_dialog.ui:163 data/resources/ui/dialogs/settings_dialog.ui:255
+#: src/ui/pages/applications/mod.rs:525 src/ui/pages/processes/mod.rs:642
+msgid "Video Memory"
+msgstr "Videominne"
+
+#: data/resources/ui/dialogs/app_dialog.ui:158 data/resources/ui/dialogs/process_dialog.ui:136
+#: data/resources/ui/dialogs/settings_dialog.ui:168 data/resources/ui/dialogs/settings_dialog.ui:260
+#: src/ui/pages/applications/mod.rs:539 src/ui/pages/processes/mod.rs:657
+msgid "Video Encoder"
+msgstr "Videokodare"
+
+#: data/resources/ui/dialogs/app_dialog.ui:167 data/resources/ui/dialogs/process_dialog.ui:145
+#: data/resources/ui/dialogs/settings_dialog.ui:173 data/resources/ui/dialogs/settings_dialog.ui:265
+#: src/ui/pages/applications/mod.rs:553 src/ui/pages/processes/mod.rs:672
+msgid "Video Decoder"
+msgstr "Videoavkodare"
+
+#: data/resources/ui/dialogs/app_dialog.ui:174 data/resources/ui/dialogs/process_dialog.ui:179
+#: data/resources/ui/pages/battery.ui:33 data/resources/ui/pages/cpu.ui:83 data/resources/ui/pages/drive.ui:54
+#: data/resources/ui/pages/gpu.ui:74 data/resources/ui/pages/memory.ui:42 data/resources/ui/pages/network.ui:51
+#: data/resources/ui/pages/npu.ui:77
+msgid "Properties"
+msgstr "Egenskaper"
+
+#: data/resources/ui/dialogs/app_dialog.ui:180
+msgid "ID"
+msgstr "ID"
+
+#: data/resources/ui/dialogs/app_dialog.ui:190 data/resources/ui/dialogs/process_dialog.ui:195
+msgid "Running Since"
+msgstr "Kör sedan"
+
+#: data/resources/ui/dialogs/app_dialog.ui:198
+msgid "Running Processes"
+msgstr "Körande processer"
+
+#: data/resources/ui/dialogs/app_dialog.ui:207 data/resources/ui/dialogs/process_dialog.ui:231
+msgid "Containerized"
+msgstr "I en behållare"
+
+#: data/resources/ui/dialogs/process_dialog.ui:7
+msgid "Process Information"
+msgstr "Processinformation"
+
+#: data/resources/ui/dialogs/process_dialog.ui:154 data/resources/ui/dialogs/settings_dialog.ui:270
+#: src/ui/pages/processes/mod.rs:687
+msgid "Total CPU Time"
+msgstr "Total processortid"
+
+#: data/resources/ui/dialogs/process_dialog.ui:163 data/resources/ui/dialogs/settings_dialog.ui:275
+#: src/ui/pages/processes/mod.rs:701
+msgid "User CPU Time"
+msgstr "Processortid för användare"
+
+#: data/resources/ui/dialogs/process_dialog.ui:172 data/resources/ui/dialogs/settings_dialog.ui:280
+#: src/ui/pages/processes/mod.rs:715
+msgid "System CPU Time"
+msgstr "Processortid för system"
+
+#: data/resources/ui/dialogs/process_dialog.ui:186 data/resources/ui/dialogs/settings_dialog.ui:210
+#: src/ui/pages/processes/mod.rs:503
+msgid "Process ID"
+msgstr "Process-ID"
+
+#: data/resources/ui/dialogs/process_dialog.ui:204 data/resources/ui/dialogs/settings_dialog.ui:300
+#: src/ui/pages/processes/mod.rs:785
+msgid "Commandline"
+msgstr "Kommandorad"
+
+#: data/resources/ui/dialogs/process_dialog.ui:213 data/resources/ui/dialogs/settings_dialog.ui:215
+#: src/ui/pages/processes/mod.rs:517
+msgid "User"
+msgstr "Användare"
+
+#: data/resources/ui/dialogs/process_dialog.ui:222
+msgid "Control Group"
+msgstr "Styrgrupp"
+
+#: data/resources/ui/dialogs/process_options_dialog.ui:7 data/resources/ui/dialogs/process_options_dialog.ui:69
+msgid "Process Options"
+msgstr "Processalternativ"
+
+#: data/resources/ui/dialogs/process_options_dialog.ui:29
+msgid "Apply"
+msgstr "Verkställ"
+
+#: data/resources/ui/dialogs/process_options_dialog.ui:72
+msgid "Niceness"
+msgstr "Nice-värde"
+
+#: data/resources/ui/dialogs/process_options_dialog.ui:73
+msgid "The priority of a process is given by its niceness. A lower niceness value correspond to a higher priority."
+msgstr "Prioriteten hos en process ges av dess nice-värde. Ett lägre nice-värde motsvarar en högre prioritet."
+
+#: data/resources/ui/dialogs/process_options_dialog.ui:87 data/resources/ui/dialogs/settings_dialog.ui:285
+#: src/ui/pages/processes/mod.rs:729
+msgid "Priority"
+msgstr "Prioritet"
+
+#: data/resources/ui/dialogs/process_options_dialog.ui:91
+msgctxt "process priority"
+msgid "Very High"
+msgstr "Mycket hög"
+
+#: data/resources/ui/dialogs/process_options_dialog.ui:92
+msgctxt "process priority"
+msgid "High"
+msgstr "Hög"
+
+#: data/resources/ui/dialogs/process_options_dialog.ui:93
+msgctxt "process priority"
+msgid "Normal"
+msgstr "Normal"
+
+#: data/resources/ui/dialogs/process_options_dialog.ui:94
+msgctxt "process priority"
+msgid "Low"
+msgstr "Låg"
+
+#: data/resources/ui/dialogs/process_options_dialog.ui:95
+msgctxt "process priority"
+msgid "Very Low"
+msgstr "Mycket låg"
+
+#: data/resources/ui/dialogs/process_options_dialog.ui:103
+msgid "Processor Affinity"
+msgstr "Processoraffinitet"
+
+#: data/resources/ui/dialogs/process_options_dialog.ui:108
+msgid "Toggle All"
+msgstr "Växla alla"
+
+#: data/resources/ui/dialogs/process_options_dialog.ui:111
+msgid "Select which processor cores the process is allowed to run on"
+msgstr "Välj vilka processorkärnor som processen får köra på"
+
+#: data/resources/ui/dialogs/settings_dialog.ui:7
+msgid "General"
+msgstr "Allmänt"
+
+#: data/resources/ui/dialogs/settings_dialog.ui:10
+msgid "Units"
+msgstr "Enheter"
+
+#: data/resources/ui/dialogs/settings_dialog.ui:13
+msgid "Data Unit Prefix"
+msgstr "Dataenhetsprefix"
+
+#: data/resources/ui/dialogs/settings_dialog.ui:17
+msgid "Decimal"
+msgstr "Decimalt"
+
+#: data/resources/ui/dialogs/settings_dialog.ui:18
+msgid "Binary"
+msgstr "Binärt"
+
+#: data/resources/ui/dialogs/settings_dialog.ui:26
+msgid "Show Network Speeds in Bits per Second"
+msgstr "Visa nätverkshastigheter i bitar per sekund"
+
+#: data/resources/ui/dialogs/settings_dialog.ui:31
+msgid "Temperature Unit"
+msgstr "Temperaturenhet"
+
+#: data/resources/ui/dialogs/settings_dialog.ui:35
+msgid "Celsius"
+msgstr "Celsius"
+
+#: data/resources/ui/dialogs/settings_dialog.ui:36
+msgid "Kelvin"
+msgstr "Kelvin"
+
+#: data/resources/ui/dialogs/settings_dialog.ui:37
+msgid "Fahrenheit"
+msgstr "Fahrenheit"
+
+#: data/resources/ui/dialogs/settings_dialog.ui:47
+msgid "User Interface"
+msgstr "Användargränssnitt"
+
+#: data/resources/ui/dialogs/settings_dialog.ui:50
+msgid "Refresh Speed"
+msgstr "Uppdatera hastighet"
+
+#: data/resources/ui/dialogs/settings_dialog.ui:51
+msgid "Higher refresh speeds can lead to higher processor usage"
+msgstr "Högre uppdateringshastigheter kan leda till högre processoranvändning"
+
+#: data/resources/ui/dialogs/settings_dialog.ui:55
+msgctxt "UI refresh speed"
+msgid "Very Slow"
+msgstr "Väldigt långsam"
+
+#: data/resources/ui/dialogs/settings_dialog.ui:56
+msgctxt "UI refresh speed"
+msgid "Slow"
+msgstr "Långsam"
+
+#: data/resources/ui/dialogs/settings_dialog.ui:57
+msgctxt "UI refresh speed"
+msgid "Normal"
+msgstr "Normal"
+
+#: data/resources/ui/dialogs/settings_dialog.ui:58
+msgctxt "UI refresh speed"
+msgid "Fast"
+msgstr "Snabb"
+
+#: data/resources/ui/dialogs/settings_dialog.ui:59
+msgctxt "UI refresh speed"
+msgid "Very Fast"
+msgstr "Väldigt snabb"
+
+#: data/resources/ui/dialogs/settings_dialog.ui:67
+msgid "Show Graph Grids"
+msgstr "Visa rutnät för diagram"
+
+#: data/resources/ui/dialogs/settings_dialog.ui:72
+msgid "Graph Data Points"
+msgstr "Datapunkter i diagram"
+
+#: data/resources/ui/dialogs/settings_dialog.ui:86
+msgid "Show Usage Details in Sidebar"
+msgstr "Visa användningsdetaljer i sidopanel"
+
+#: data/resources/ui/dialogs/settings_dialog.ui:87
+msgid "If enabled, the usage along with other information will be displayed"
+msgstr "Om aktiverat kommer användningen visas tillsammans med annan information"
+
+#: data/resources/ui/dialogs/settings_dialog.ui:92
+msgid "Show Device Descriptions in Sidebar"
+msgstr "Visa enhetsbeskrivningar i sidopanel"
+
+#: data/resources/ui/dialogs/settings_dialog.ui:93
+msgid "If enabled, a device identifier like its name or device type will be displayed"
+msgstr "Om aktiverat kommer en enhetsidentifierare som dess namn eller enhetstyp att visas"
+
+#: data/resources/ui/dialogs/settings_dialog.ui:98
+msgid "Sidebar Meter Type"
+msgstr "Mätartyp för sidopanel"
+
+#: data/resources/ui/dialogs/settings_dialog.ui:102
+msgid "Bar"
+msgstr "Stolpe"
+
+#: data/resources/ui/dialogs/settings_dialog.ui:103
+msgid "Graph"
+msgstr "Diagram"
+
+#: data/resources/ui/dialogs/settings_dialog.ui:111
+msgid "Normalize Processor Usage"
+msgstr "Normalisera processoranvändning"
+
+#: data/resources/ui/dialogs/settings_dialog.ui:112
+msgid "If enabled, the total usage of all cores will be divided by the amount of cores"
+msgstr "Om aktiverat kommer den totala användningen för alla kärnor delas med antalet kärnor"
+
+#: data/resources/ui/dialogs/settings_dialog.ui:122 data/resources/ui/window.ui:65 data/resources/ui/window.ui:72
+#: src/ui/pages/applications/mod.rs:134
+msgid "Apps"
+msgstr "Program"
+
+#: data/resources/ui/dialogs/settings_dialog.ui:125 data/resources/ui/dialogs/settings_dialog.ui:207
+msgid "Information Columns"
+msgstr "Informationskolumner"
+
+#: data/resources/ui/dialogs/settings_dialog.ui:183 data/resources/ui/dialogs/settings_dialog.ui:295
+#: src/ui/pages/applications/mod.rs:581 src/ui/pages/processes/mod.rs:770
+msgid "Combined Memory"
+msgstr "Kombinerat minne"
+
+#: data/resources/ui/dialogs/settings_dialog.ui:193 data/resources/ui/window.ui:105 data/resources/ui/window.ui:112
+#: src/ui/pages/processes/mod.rs:181
+msgid "Processes"
+msgstr "Processer"
+
+#: data/resources/ui/dialogs/settings_dialog.ui:196 data/resources/ui/pages/cpu.ui:22 data/resources/ui/pages/processes.ui:56
+msgid "Options"
+msgstr "Alternativ"
+
+#: data/resources/ui/dialogs/settings_dialog.ui:199
+msgid "Show Niceness Values"
+msgstr "Visa nice-värden"
+
+#: data/resources/ui/dialogs/settings_dialog.ui:200
+msgid "Display priorities as niceness to allow for more fine-grained adjustments"
+msgstr "Visa prioriteter som nice-värde för att tillåta mer finkornig justering"
+
+#: data/resources/ui/dialogs/settings_dialog.ui:310
+msgid "Devices"
+msgstr "Enheter"
+
+#: data/resources/ui/dialogs/settings_dialog.ui:313
+msgid "Drives"
+msgstr "Diskar"
+
+#: data/resources/ui/dialogs/settings_dialog.ui:316
+msgid "Show Virtual Drives"
+msgstr "Visa virtuella diskar"
+
+#: data/resources/ui/dialogs/settings_dialog.ui:317
+msgid "Virtual drives are for example ZFS volumes or mapped devices"
+msgstr "Virtuella diskar är exempelvis ZFS-volymer eller mappade enheter"
+
+#: data/resources/ui/dialogs/settings_dialog.ui:327
+msgid "Show Virtual Network Interfaces"
+msgstr "Visa virtuella nätverksgränssnitt"
+
+#: data/resources/ui/dialogs/settings_dialog.ui:328
+msgid "Virtual network interfaces are for example bridges or VPN tunnels"
+msgstr "Virtuella nätverksgränssnitt är exempelvis bryggor eller VPN-tunnlar"
+
+#: data/resources/ui/pages/applications.ui:6 data/resources/ui/pages/applications.ui:26 src/ui/pages/applications/mod.rs:1001
+msgid "Kill App"
+msgstr "Döda program"
+
+#: data/resources/ui/pages/applications.ui:10 data/resources/ui/pages/applications.ui:30
+#: src/ui/pages/applications/mod.rs:1000
+msgid "Halt App"
+msgstr "Stoppa program"
+
+#: data/resources/ui/pages/applications.ui:14 data/resources/ui/pages/applications.ui:34
+#: src/ui/pages/applications/mod.rs:1002
+msgid "Continue App"
+msgstr "Fortsätt program"
+
+#: data/resources/ui/pages/applications.ui:22 data/resources/ui/pages/applications.ui:98 src/ui/pages/applications/mod.rs:999
+msgid "End App"
+msgstr "Avsluta program"
+
+#: data/resources/ui/pages/applications.ui:40 data/resources/ui/pages/processes.ui:62
+msgid "Information"
+msgstr "Information"
+
+#: data/resources/ui/pages/applications.ui:57
+msgid "Search applications"
+msgstr "Sök program"
+
+#: data/resources/ui/pages/applications.ui:87 data/resources/ui/pages/applications.ui:89
+msgid "Show App Information"
+msgstr "Visa programinformation"
+
+#: data/resources/ui/pages/battery.ui:36
+msgid "Battery Health"
+msgstr "Batterihälsa"
+
+#: data/resources/ui/pages/battery.ui:45
+msgid "Design Capacity"
+msgstr "Designkapacitet"
+
+#: data/resources/ui/pages/battery.ui:54
+msgid "Charge Cycles"
+msgstr "Laddningscykler"
+
+#: data/resources/ui/pages/battery.ui:63
+msgid "Technology"
+msgstr "Teknologi"
+
+#: data/resources/ui/pages/battery.ui:72 data/resources/ui/pages/gpu.ui:81 data/resources/ui/pages/network.ui:58
+#: data/resources/ui/pages/npu.ui:84
+msgid "Manufacturer"
+msgstr "Tillverkare"
+
+#: data/resources/ui/pages/battery.ui:81
+msgid "Model Name"
+msgstr "Modellnamn"
+
+#: data/resources/ui/pages/battery.ui:90 data/resources/ui/pages/drive.ui:66
+msgid "Device"
+msgstr "Enhet"
+
+#: data/resources/ui/pages/cpu.ui:26
+msgid "Show Usages of Logical CPUs"
+msgstr "Visa användning för logiska processorer"
+
+#: data/resources/ui/pages/cpu.ui:75 data/resources/ui/pages/gpu.ui:66 data/resources/ui/pages/npu.ui:69
+msgid "Sensors"
+msgstr "Sensorer"
+
+#: data/resources/ui/pages/cpu.ui:90
+msgid "Max Frequency"
+msgstr "Maxfrekvens"
+
+#: data/resources/ui/pages/cpu.ui:99
+msgid "Logical Cores"
+msgstr "Logiska kärnor"
+
+#: data/resources/ui/pages/cpu.ui:108
+msgid "Physical Cores"
+msgstr "Fysiska kärnor"
+
+#: data/resources/ui/pages/cpu.ui:117
+msgid "Sockets"
+msgstr "Uttag"
+
+#: data/resources/ui/pages/cpu.ui:126
+msgid "Uptime"
+msgstr "Upptid"
+
+#: data/resources/ui/pages/cpu.ui:135
+msgid "Virtualization"
+msgstr "Virtualisering"
+
+#: data/resources/ui/pages/cpu.ui:144
+msgid "Architecture"
+msgstr "Arkitektur"
+
+#: data/resources/ui/pages/drive.ui:38
+msgid "Total Read"
+msgstr "Totalt läst"
+
+#: data/resources/ui/pages/drive.ui:47
+msgid "Total Written"
+msgstr "Totalt skrivet"
+
+#: data/resources/ui/pages/drive.ui:57 data/resources/ui/pages/memory.ui:72
+msgid "Type"
+msgstr "Typ"
+
+#: data/resources/ui/pages/drive.ui:75
+msgid "Capacity"
+msgstr "Kapacitet"
+
+#: data/resources/ui/pages/drive.ui:84
+msgid "Writable"
+msgstr "Skrivbar"
+
+#: data/resources/ui/pages/drive.ui:93
+msgid "Removable"
+msgstr "Flyttbar"
+
+#. Translators: "Link" refers to something like "PCIe 4.0 ×16"
+#: data/resources/ui/pages/drive.ui:102 data/resources/ui/pages/gpu.ui:113 data/resources/ui/pages/network.ui:103
+#: data/resources/ui/pages/npu.ui:116
+msgid "Link"
+msgstr "Länk"
+
+#: data/resources/ui/pages/gpu.ui:37
+msgid "GPU Frequency"
+msgstr "GPU-frekvens"
+
+#: data/resources/ui/pages/gpu.ui:50
+msgid "Video Memory Frequency"
+msgstr "Videominnesfrekvens"
+
+#: data/resources/ui/pages/gpu.ui:55 data/resources/ui/pages/npu.ui:58 src/ui/pages/battery.rs:219
+msgid "Power Usage"
+msgstr "Strömförbrukning"
+
+#: data/resources/ui/pages/gpu.ui:90 data/resources/ui/pages/npu.ui:93
+msgid "PCI Slot"
+msgstr "PCI-fack"
+
+#: data/resources/ui/pages/gpu.ui:99 data/resources/ui/pages/network.ui:67 data/resources/ui/pages/npu.ui:102
+msgid "Driver Used"
+msgstr "Drivrutin som används"
+
+#: data/resources/ui/pages/gpu.ui:108 data/resources/ui/pages/npu.ui:111
+msgid "Max Power Cap"
+msgstr "Maximal strömgräns"
+
+#: data/resources/ui/pages/memory.ui:9
+msgid "You need to authenticate to see memory properties"
+msgstr "Du måste autentisera dig för att se minnesegenskaper"
+
+#: data/resources/ui/pages/memory.ui:10
+msgid "Authenticate"
+msgstr "Autentisera"
+
+#: data/resources/ui/pages/memory.ui:45
+msgid "Slots Used"
+msgstr "Fack som används"
+
+#: data/resources/ui/pages/memory.ui:54
+msgid "Speed"
+msgstr "Hastighet"
+
+#: data/resources/ui/pages/memory.ui:63
+msgid "Form Factor"
+msgstr "Formfaktor"
+
+#: data/resources/ui/pages/memory.ui:81
+msgid "Type Detail"
+msgstr "Typdetaljer"
+
+#: data/resources/ui/pages/network.ui:35
+msgid "Total Received"
+msgstr "Totalt mottaget"
+
+#: data/resources/ui/pages/network.ui:44
+msgid "Total Sent"
+msgstr "Totalt skickat"
+
+#: data/resources/ui/pages/network.ui:76
+msgid "Interface"
+msgstr "Gränssnitt"
+
+#: data/resources/ui/pages/network.ui:85
+msgid "Hardware Address"
+msgstr "Hårdvaruadress"
+
+#: data/resources/ui/pages/network.ui:94
+msgid "Network Name"
+msgstr "Nätverksnamn"
+
+#: data/resources/ui/pages/network.ui:112
+msgid "Link Speed"
+msgstr "Länkhastighet"
+
+#: data/resources/ui/pages/npu.ui:31
+msgid "NPU Frequency"
+msgstr "NPU-frekvens"
+
+#: data/resources/ui/pages/npu.ui:40
+msgid "Performance"
+msgstr "Prestanda"
+
+#: data/resources/ui/pages/npu.ui:53
+msgid "Memory Frequency"
+msgstr "Minnesfrekvens"
+
+#: data/resources/ui/pages/processes.ui:6 data/resources/ui/pages/processes.ui:42 src/ui/pages/processes/mod.rs:1324
+msgid "Kill Process"
+msgstr "Döda process"
+
+#: data/resources/ui/pages/processes.ui:10 data/resources/ui/pages/processes.ui:46 src/ui/pages/processes/mod.rs:1323
+msgid "Halt Process"
+msgstr "Stoppa process"
+
+#: data/resources/ui/pages/processes.ui:14 data/resources/ui/pages/processes.ui:50 src/ui/pages/processes/mod.rs:1325
+msgid "Continue Process"
+msgstr "Fortsätt process"
+
+#: data/resources/ui/pages/processes.ui:22 data/resources/ui/pages/processes.ui:74
+msgid "Kill Processes"
+msgstr "Döda processer"
+
+#: data/resources/ui/pages/processes.ui:26 data/resources/ui/pages/processes.ui:78
+msgid "Halt Processes"
+msgstr "Stoppa processer"
+
+#: data/resources/ui/pages/processes.ui:30 data/resources/ui/pages/processes.ui:82
+msgid "Continue Processes"
+msgstr "Fortsätt processer"
+
+#: data/resources/ui/pages/processes.ui:38 data/resources/ui/pages/processes.ui:157 src/ui/pages/processes/mod.rs:816
+#: src/ui/pages/processes/mod.rs:1322
+msgid "End Process"
+msgstr "Avsluta process"
+
+#: data/resources/ui/pages/processes.ui:70 src/ui/pages/processes/mod.rs:820
+msgid "End Processes"
+msgstr "Avsluta processer"
+
+#: data/resources/ui/pages/processes.ui:103
+msgid "Search processes"
+msgstr "Sök processer"
+
+#: data/resources/ui/pages/processes.ui:133 data/resources/ui/pages/processes.ui:135
+msgid "Show Process Options"
+msgstr "Visa processalternativ"
+
+#: data/resources/ui/pages/processes.ui:146 data/resources/ui/pages/processes.ui:148
+msgid "Show Process Information"
+msgstr "Visa processinformation"
+
+#: data/resources/ui/shortcuts.ui:6
+msgctxt "shortcut window"
+msgid "General"
+msgstr "Allmänt"
+
+#: data/resources/ui/shortcuts.ui:9
+msgctxt "shortcut window"
+msgid "Preferences"
+msgstr "Inställningar"
+
+#: data/resources/ui/shortcuts.ui:15
+msgctxt "shortcut window"
+msgid "Show Shortcuts"
+msgstr "Visa kortkommandon"
+
+#: data/resources/ui/shortcuts.ui:21
+msgctxt "shortcut window"
+msgid "Quit"
+msgstr "Avsluta"
+
+#: data/resources/ui/shortcuts.ui:29
+msgctxt "shortcut window"
+msgid "Apps/Processes"
+msgstr "Program/Processer"
+
+#: data/resources/ui/shortcuts.ui:32
+msgctxt "shortcut window"
+msgid "Toggle Search Field"
+msgstr "Växla sökfält"
+
+#: data/resources/ui/shortcuts.ui:38
+msgctxt "shortcut window"
+msgid "End App/Process"
+msgstr "Avsluta program/process"
+
+#: data/resources/ui/shortcuts.ui:44
+msgctxt "shortcut window"
+msgid "Kill App/Process"
+msgstr "Döda program/process"
+
+#: data/resources/ui/shortcuts.ui:50
+msgctxt "shortcut window"
+msgid "Halt App/Process"
+msgstr "Stoppa program/process"
+
+#: data/resources/ui/shortcuts.ui:56
+msgctxt "shortcut window"
+msgid "Continue App/Process"
+msgstr "Fortsätt program/process"
+
+#: data/resources/ui/shortcuts.ui:62
+msgctxt "shortcut window"
+msgid "Show Information for App/Process"
+msgstr "Visa information för app/process"
+
+#: data/resources/ui/shortcuts.ui:68
+msgctxt "shortcut window"
+msgid "Show Process Options"
+msgstr "Visa processalternativ"
+
+#: data/resources/ui/window.ui:6
+msgid "Preferences"
+msgstr "Inställningar"
+
+#: data/resources/ui/window.ui:10
+msgid "Keyboard Shortcuts"
+msgstr "Tangentbordsgenvägar"
+
+#: data/resources/ui/window.ui:14
+msgid "About Resources"
+msgstr "Om Resurser"
+
+#: data/resources/ui/window.ui:88 data/resources/ui/window.ui:128
+msgid "Search"
+msgstr "Sök"
+
+#: data/resources/ui/window.ui:90 data/resources/ui/window.ui:130
+msgid "Toggle search field"
+msgstr "Växla sökfält"
+
+#. Translator credits. Replace "translator-credits" with your name/username, and optionally an email or URL.
+#. One name per line, please do not remove previous names.
+#: src/application.rs:285
+msgid "translator-credits"
+msgstr ""
+"Anders Jonsson <anders.jonsson@norsjovallen.se>\n"
+"\n"
+"Skicka synpunkter på översättningen till\n"
+"<tp-sv@listor.tp-sv.se>."
+
+#: src/ui/dialogs/app_dialog.rs:155 src/ui/dialogs/process_dialog.rs:133 src/ui/dialogs/process_dialog.rs:137
+#: src/ui/dialogs/process_dialog.rs:146 src/ui/dialogs/process_dialog.rs:148 src/ui/dialogs/process_dialog.rs:171
+#: src/ui/dialogs/process_dialog.rs:178 src/ui/dialogs/process_dialog.rs:185 src/ui/dialogs/process_dialog.rs:192
+#: src/ui/pages/applications/mod.rs:460 src/ui/pages/applications/mod.rs:488 src/ui/pages/battery.rs:207
+#: src/ui/pages/battery.rs:227 src/ui/pages/battery.rs:233 src/ui/pages/battery.rs:236 src/ui/pages/battery.rs:267
+#: src/ui/pages/cpu.rs:245 src/ui/pages/cpu.rs:260 src/ui/pages/cpu.rs:280 src/ui/pages/cpu.rs:286 src/ui/pages/cpu.rs:292
+#: src/ui/pages/cpu.rs:298 src/ui/pages/cpu.rs:302 src/ui/pages/cpu.rs:305 src/ui/pages/cpu.rs:343 src/ui/pages/drive.rs:377
+#: src/ui/pages/gpu.rs:247 src/ui/pages/gpu.rs:254 src/ui/pages/gpu.rs:315 src/ui/pages/gpu.rs:318 src/ui/pages/gpu.rs:329
+#: src/ui/pages/gpu.rs:343 src/ui/pages/memory.rs:226 src/ui/pages/memory.rs:227 src/ui/pages/memory.rs:231
+#: src/ui/pages/memory.rs:232 src/ui/pages/memory.rs:236 src/ui/pages/memory.rs:237 src/ui/pages/memory.rs:265
+#: src/ui/pages/network.rs:253 src/ui/pages/network.rs:260 src/ui/pages/network.rs:267 src/ui/pages/network.rs:273
+#: src/ui/pages/network.rs:276 src/ui/pages/network.rs:286 src/ui/pages/network.rs:295 src/ui/pages/network.rs:304
+#: src/ui/pages/network.rs:383 src/ui/pages/network.rs:397 src/ui/pages/processes/mod.rs:573
+#: src/ui/pages/processes/mod.rs:588 src/ui/pages/processes/mod.rs:603 src/ui/pages/processes/mod.rs:618
+#: src/ui/pages/processes/mod.rs:742 src/ui/pages/processes/mod.rs:744 src/utils/battery.rs:152 src/utils/drive.rs:137
+#: src/utils/gpu/mod.rs:279 src/utils/gpu/mod.rs:291 src/utils/link/mod.rs:61 src/utils/link/wifi.rs:171
+#: src/utils/npu/mod.rs:263 src/utils/npu/mod.rs:269
+msgid "N/A"
+msgstr "-"
+
+#: src/ui/dialogs/process_options_dialog.rs:147 src/ui/pages/cpu.rs:259 src/ui/pages/cpu.rs:420 src/ui/pages/cpu.rs:424
+msgid "CPU {}"
+msgstr "Processor {}"
+
+#: src/ui/pages/applications/application_entry.rs:188 src/ui/pages/processes/process_entry.rs:211
+msgid "No"
+msgstr "Nej"
+
+#: src/ui/pages/applications/application_entry.rs:189 src/ui/pages/processes/process_entry.rs:212
+msgid "Yes (AppImage)"
+msgstr "Ja (AppImage)"
+
+#: src/ui/pages/applications/application_entry.rs:190 src/ui/pages/processes/process_entry.rs:213
+msgid "Yes (Flatpak)"
+msgstr "Ja (Flatpak)"
+
+#. Translators: "Portable" is the name of the containerization method used, please keep it as is
+#: src/ui/pages/applications/application_entry.rs:192 src/ui/pages/processes/process_entry.rs:215
+msgid "Yes (Portable)"
+msgstr "Ja (Portable)"
+
+#: src/ui/pages/applications/application_entry.rs:193 src/ui/pages/processes/process_entry.rs:216
+msgid "Yes (Snap)"
+msgstr "Ja (Snap)"
+
+#: src/ui/pages/applications/mod.rs:835
+msgid "Running Apps: {}"
+msgstr "Program som körs: {}"
+
+#: src/ui/pages/applications/mod.rs:875 src/ui/pages/processes/mod.rs:1162
+msgid "Cancel"
+msgstr "Avbryt"
+
+#: src/ui/pages/applications/mod.rs:921
+msgid "App"
+msgstr "Program"
+
+#: src/ui/pages/applications/mod.rs:977 src/ui/pages/processes/mod.rs:1271
+msgid "End {}?"
+msgstr "Avsluta {}?"
+
+#: src/ui/pages/applications/mod.rs:978 src/ui/pages/processes/mod.rs:1272
+msgid "Halt {}?"
+msgstr "Stoppa {}?"
+
+#: src/ui/pages/applications/mod.rs:979 src/ui/pages/processes/mod.rs:1273
+msgid "Kill {}?"
+msgstr "Döda {}?"
+
+#: src/ui/pages/applications/mod.rs:980 src/ui/pages/processes/mod.rs:1274
+msgid "Continue {}?"
+msgstr "Fortsätt {}?"
+
+#: src/ui/pages/applications/mod.rs:986 src/ui/pages/processes/mod.rs:1309
+msgid "Unsaved work might be lost."
+msgstr "Osparat arbete kan gå förlorat."
+
+#: src/ui/pages/applications/mod.rs:988
+msgid "Halting an app can come with serious risks such as losing data and security implications. Use with caution."
+msgstr ""
+"Att stoppa ett program kan komma med allvarliga risker såsom att förlora data och säkerhetsföljder. Använd med varsamhet."
+
+#: src/ui/pages/applications/mod.rs:991
+msgid "Killing an app can come with serious risks such as losing data and security implications. Use with caution."
+msgstr ""
+"Att döda ett program kan komma med allvarliga risker såsom att förlora data och säkerhetsföljder. Använd med varsamhet."
+
+#: src/ui/pages/battery.rs:104 src/utils/battery.rs:258
+msgid "Battery"
+msgstr "Batteri"
+
+#: src/ui/pages/battery.rs:212
+msgid "Battery Charge"
+msgstr "Batteriladdning"
+
+#: src/ui/pages/cpu.rs:244 src/ui/pages/gpu.rs:214
+msgid "Total Usage"
+msgstr "Total användning"
+
+#: src/ui/pages/cpu.rs:273 src/ui/pages/gpu.rs:241
+msgid "Temperature"
+msgstr "Temperatur"
+
+#: src/ui/pages/drive.rs:127
+msgid "Drive"
+msgstr "Disk"
+
+#: src/ui/pages/drive.rs:237
+msgid "Drive Activity"
+msgstr "Diskaktivitet"
+
+#: src/ui/pages/drive.rs:244
+msgid "Read Speed"
+msgstr "Läshastighet"
+
+#: src/ui/pages/drive.rs:248
+msgid "Write Speed"
+msgstr "Skrivhastighet"
+
+#. Translators: This is an abbreviation for "Read" and "Write". This is displayed in the sidebar so your
+#. translation should preferably be quite short or an abbreviation
+#: src/ui/pages/drive.rs:384
+msgid "R: {} · W: {}"
+msgstr "L: {} · S: {}"
+
+#: src/ui/pages/gpu.rs:222
+msgid "Video Encoder/Decoder Usage"
+msgstr "Användning av videokodare/avkodare"
+
+#: src/ui/pages/gpu.rs:228
+msgid "Video Encoder Usage"
+msgstr "Användning av videokodare"
+
+#: src/ui/pages/gpu.rs:233
+msgid "Video Decoder Usage"
+msgstr "Användning av videoavkodare"
+
+#: src/ui/pages/gpu.rs:238
+msgid "Video Memory Usage"
+msgstr "Videominnesanvändning"
+
+#: src/ui/pages/memory.rs:261
+msgid "{} of {}"
+msgstr "{} av {}"
+
+#: src/ui/pages/memory.rs:264
+msgid "{} MT/s"
+msgstr "{} MT/s"
+
+#. Translators: This will be displayed in the sidebar, so your translation for "Swap" should
+#. preferably be quite short or an abbreviation
+#: src/ui/pages/memory.rs:340
+msgid "{} / {} · Swap: {} %"
+msgstr "{} / {} · Växling: {} %"
+
+#: src/ui/pages/network.rs:128 src/utils/network.rs:147
+msgid "Network Interface"
+msgstr "Nätverksgränssnitt"
+
+#: src/ui/pages/network.rs:242
+msgid "Receiving"
+msgstr "Tar emot"
+
+#: src/ui/pages/network.rs:246
+msgid "Sending"
+msgstr "Skickar"
+
+#. Translators: This is an abbreviation for "Receive" and "Send". This is displayed in the sidebar so
+#. your translation should preferably be quite short or an abbreviation
+#: src/ui/pages/network.rs:414
+msgid "R: {} · S: {}"
+msgstr "T: {} · S: {}"
+
+#: src/ui/pages/processes/mod.rs:1113
+msgid "Running Processes: {}"
+msgstr "Körande processer: {}"
+
+#: src/ui/pages/processes/mod.rs:1211
+msgid "Process"
+msgstr "Process"
+
+#: src/ui/pages/processes/mod.rs:1281
+msgid "End process?"
+msgid_plural "End {} processes?"
+msgstr[0] "Avsluta process?"
+msgstr[1] "Avsluta {} processer?"
+
+#: src/ui/pages/processes/mod.rs:1287
+msgid "Halt process?"
+msgid_plural "Halt {} processes?"
+msgstr[0] "Stoppa process?"
+msgstr[1] "Stoppa {} processer?"
+
+#: src/ui/pages/processes/mod.rs:1293 src/ui/pages/processes/mod.rs:1299
+msgid "Kill process?"
+msgid_plural "Kill {} processes?"
+msgstr[0] "Döda process?"
+msgstr[1] "Döda {} processer?"
+
+#: src/ui/pages/processes/mod.rs:1311
+msgid "Halting a process can come with serious risks such as losing data and security implications. Use with caution."
+msgstr ""
+"Att stoppa en process kan komma med allvarliga risker såsom att förlora data och säkerhetsföljder. Använd med varsamhet."
+
+#: src/ui/pages/processes/mod.rs:1314
+msgid "Killing a process can come with serious risks such as losing data and security implications. Use with caution."
+msgstr ""
+"Att döda en process kan komma med allvarliga risker såsom att förlora data och säkerhetsföljder. Använd med varsamhet."
+
+#: src/ui/window.rs:468
+msgid "GPU {}"
+msgstr "GPU {}"
+
+#: src/ui/window.rs:498
+msgid "NPU {}"
+msgstr "NPU {}"
+
+#: src/ui/window.rs:500
+msgid "NPU"
+msgstr "NPU"
+
+#: src/ui/window.rs:1202
+msgid "Successfully adjusted {}"
+msgstr "Justerade {}"
+
+#: src/ui/window.rs:1203
+msgid "There was a problem adjusting {}"
+msgstr "Ett problem uppstod vid justering av {}"
+
+#: src/ui/window.rs:1285
+msgid "Successfully ended {}"
+msgstr "Avslutade {}"
+
+#: src/ui/window.rs:1286
+msgid "Successfully halted {}"
+msgstr "Stoppade {}"
+
+#: src/ui/window.rs:1287
+msgid "Successfully killed {}"
+msgstr "Dödade {}"
+
+#: src/ui/window.rs:1288
+msgid "Successfully continued {}"
+msgstr "Fortsatte {}"
+
+#: src/ui/window.rs:1295
+msgid "Successfully ended the process"
+msgid_plural "Successfully ended {} processes"
+msgstr[0] "Avslutade processen"
+msgstr[1] "Avslutade {} processer"
+
+#: src/ui/window.rs:1301
+msgid "Successfully halted the process"
+msgid_plural "Successfully halted {} processes"
+msgstr[0] "Stoppade processen"
+msgstr[1] "Stoppade {} processer"
+
+#: src/ui/window.rs:1307
+msgid "Successfully killed the process"
+msgid_plural "Successfully killed {} processes"
+msgstr[0] "Dödade processen"
+msgstr[1] "Dödade {} processer"
+
+#: src/ui/window.rs:1313
+msgid "Successfully continued the process"
+msgid_plural "Successfully continued {} processes"
+msgstr[0] "Fortsatte processen"
+msgstr[1] "Fortsatte {} processer"
+
+#: src/ui/window.rs:1324
+msgid "There was a problem ending a process"
+msgid_plural "There were problems ending {} processes"
+msgstr[0] "Ett problem uppstod då en process skulle avslutas"
+msgstr[1] "Ett problem uppstod då {} processer skulle avslutas"
+
+#: src/ui/window.rs:1330
+msgid "There was a problem halting a process"
+msgid_plural "There were problems halting {} processes"
+msgstr[0] "Ett problem uppstod då en process skulle stoppas"
+msgstr[1] "Ett problem uppstod då {} processer skulle stoppas"
+
+#: src/ui/window.rs:1336
+msgid "There was a problem killing a process"
+msgid_plural "There were problems killing {} processes"
+msgstr[0] "Ett problem uppstod då en process skulle dödas"
+msgstr[1] "Ett problem uppstod då {} processer skulle dödas"
+
+#: src/ui/window.rs:1342
+msgid "There was a problem continuing a process"
+msgid_plural "There were problems continuing {} processes"
+msgstr[0] "Ett problem uppstod då en process skulle fortsättas"
+msgstr[1] "Ett problem uppstod då {} processer skulle fortsättas"
+
+#: src/ui/window.rs:1352
+msgid "There was a problem ending {}"
+msgstr "Ett problem uppstod då {} skulle avslutas"
+
+#: src/ui/window.rs:1353
+msgid "There was a problem halting {}"
+msgstr "Ett problem uppstod då {} skulle stoppas"
+
+#: src/ui/window.rs:1354
+msgid "There was a problem killing {}"
+msgstr "Ett problem uppstod då {} skulle dödas"
+
+#: src/ui/window.rs:1355
+msgid "There was a problem continuing {}"
+msgstr "Ett problem uppstod då {} skulle fortsättas"
+
+#: src/utils/app.rs:200
+msgid "System Processes"
+msgstr "Systemprocesser"
+
+#: src/utils/battery.rs:93
+msgid "Charging"
+msgstr "Laddar"
+
+#: src/utils/battery.rs:94
+msgid "Discharging"
+msgstr "Laddar ur"
+
+#: src/utils/battery.rs:95
+msgid "Empty"
+msgstr "Tomt"
+
+#: src/utils/battery.rs:96
+msgid "Full"
+msgstr "Fullt"
+
+#: src/utils/battery.rs:97
+msgid "Unknown"
+msgstr "Okänt"
+
+#: src/utils/battery.rs:143
+msgid "Nickel-Metal Hydride"
+msgstr "Nickelmetallhydrid"
+
+#: src/utils/battery.rs:144
+msgid "Nickel-Cadmium"
+msgstr "Nickel-kadmium"
+
+#: src/utils/battery.rs:145
+msgid "Nickel-Zinc"
+msgstr "Nickel-zink"
+
+#: src/utils/battery.rs:146
+msgid "Lead-Acid"
+msgstr "Blysyra"
+
+#: src/utils/battery.rs:147
+msgid "Lithium-Ion"
+msgstr "Litium-jon"
+
+#: src/utils/battery.rs:148
+msgid "Lithium Iron Phosphate"
+msgstr "Litiumjärnfosfat"
+
+#: src/utils/battery.rs:149
+msgid "Lithium Polymer"
+msgstr "Litiumpolymer"
+
+#: src/utils/battery.rs:151
+msgid "Rechargeable Alkaline Managanese"
+msgstr "Uppladdningsbar alkalisk mangan"
+
+#: src/utils/battery.rs:256
+msgid "{} Battery"
+msgstr "{} batteri"
+
+#: src/utils/units.rs:91
+msgid "{} K"
+msgstr "{} K"
+
+#: src/utils/units.rs:93
+msgid "{} °C"
+msgstr "{} °C"
+
+#: src/utils/units.rs:95
+msgid "{} °F"
+msgstr "{} °F"
+
+#: src/utils/units.rs:122 src/utils/units.rs:136 src/utils/units.rs:156 src/utils/units.rs:170
+msgid "{} B"
+msgstr "{} B"
+
+#: src/utils/units.rs:123 src/utils/units.rs:137
+msgid "{} kB"
+msgstr "{} kB"
+
+#: src/utils/units.rs:124 src/utils/units.rs:138
+msgid "{} MB"
+msgstr "{} MB"
+
+#: src/utils/units.rs:125 src/utils/units.rs:139
+msgid "{} GB"
+msgstr "{} GB"
+
+#: src/utils/units.rs:126 src/utils/units.rs:140
+msgid "{} TB"
+msgstr "{} TB"
+
+#: src/utils/units.rs:127 src/utils/units.rs:141
+msgid "{} PB"
+msgstr "{} PB"
+
+#: src/utils/units.rs:128 src/utils/units.rs:142
+msgid "{} EB"
+msgstr "{} EB"
+
+#: src/utils/units.rs:129 src/utils/units.rs:143
+msgid "{} ZB"
+msgstr "{} ZB"
+
+#: src/utils/units.rs:130 src/utils/units.rs:144
+msgid "{} YB"
+msgstr "{} YB"
+
+#: src/utils/units.rs:131 src/utils/units.rs:145
+msgid "{} RB"
+msgstr "{} RB"
+
+#: src/utils/units.rs:132 src/utils/units.rs:146
+msgid "{} QB"
+msgstr "{} QB"
+
+#: src/utils/units.rs:157 src/utils/units.rs:171
+msgid "{} KiB"
+msgstr "{} KiB"
+
+#: src/utils/units.rs:158 src/utils/units.rs:172
+msgid "{} MiB"
+msgstr "{} MiB"
+
+#: src/utils/units.rs:159 src/utils/units.rs:173
+msgid "{} GiB"
+msgstr "{} GiB"
+
+#: src/utils/units.rs:160 src/utils/units.rs:174
+msgid "{} TiB"
+msgstr "{} TiB"
+
+#: src/utils/units.rs:161 src/utils/units.rs:175
+msgid "{} PiB"
+msgstr "{} PiB"
+
+#: src/utils/units.rs:162 src/utils/units.rs:176
+msgid "{} EiB"
+msgstr "{} EiB"
+
+#: src/utils/units.rs:163 src/utils/units.rs:177
+msgid "{} ZiB"
+msgstr "{} ZiB"
+
+#: src/utils/units.rs:164 src/utils/units.rs:178
+msgid "{} YiB"
+msgstr "{} YiB"
+
+#: src/utils/units.rs:165 src/utils/units.rs:179
+msgid "{} RiB"
+msgstr "{} RiB"
+
+#: src/utils/units.rs:166 src/utils/units.rs:180
+msgid "{} QiB"
+msgstr "{} QiB"
+
+#: src/utils/units.rs:206 src/utils/units.rs:223
+msgid "{} B/s"
+msgstr "{} B/s"
+
+#: src/utils/units.rs:207
+msgid "{} kB/s"
+msgstr "{} kB/s"
+
+#: src/utils/units.rs:208
+msgid "{} MB/s"
+msgstr "{} MB/s"
+
+#: src/utils/units.rs:209
+msgid "{} GB/s"
+msgstr "{} GB/s"
+
+#: src/utils/units.rs:210
+msgid "{} TB/s"
+msgstr "{} TB/s"
+
+#: src/utils/units.rs:211
+msgid "{} PB/s"
+msgstr "{} PB/s"
+
+#: src/utils/units.rs:212
+msgid "{} EB/s"
+msgstr "{} EB/s"
+
+#: src/utils/units.rs:213
+msgid "{} ZB/s"
+msgstr "{} ZB/s"
+
+#: src/utils/units.rs:214
+msgid "{} YB/s"
+msgstr "{} YB/s"
+
+#: src/utils/units.rs:215
+msgid "{} RB/s"
+msgstr "{} RB/s"
+
+#: src/utils/units.rs:216
+msgid "{} QB/s"
+msgstr "{} QB/s"
+
+#: src/utils/units.rs:224
+msgid "{} KiB/s"
+msgstr "{} KiB/s"
+
+#: src/utils/units.rs:225
+msgid "{} MiB/s"
+msgstr "{} MiB/s"
+
+#: src/utils/units.rs:226
+msgid "{} GiB/s"
+msgstr "{} GiB/s"
+
+#: src/utils/units.rs:227
+msgid "{} TiB/s"
+msgstr "{} TiB/s"
+
+#: src/utils/units.rs:228
+msgid "{} PiB/s"
+msgstr "{} PiB/s"
+
+#: src/utils/units.rs:229
+msgid "{} EiB/s"
+msgstr "{} EiB/s"
+
+#: src/utils/units.rs:230
+msgid "{} ZiB/s"
+msgstr "{} ZiB/s"
+
+#: src/utils/units.rs:231
+msgid "{} YiB/s"
+msgstr "{} YiB/s"
+
+#: src/utils/units.rs:232
+msgid "{} RiB/s"
+msgstr "{} RiB/s"
+
+#: src/utils/units.rs:233
+msgid "{} QiB/s"
+msgstr "{} QiB/s"
+
+#: src/utils/units.rs:247 src/utils/units.rs:264
+msgid "{} b/s"
+msgstr "{} b/s"
+
+#: src/utils/units.rs:248
+msgid "{} kb/s"
+msgstr "{} kb/s"
+
+#: src/utils/units.rs:249
+msgid "{} Mb/s"
+msgstr "{} Mb/s"
+
+#: src/utils/units.rs:250
+msgid "{} Gb/s"
+msgstr "{} Gb/s"
+
+#: src/utils/units.rs:251
+msgid "{} Tb/s"
+msgstr "{} Tb/s"
+
+#: src/utils/units.rs:252
+msgid "{} Pb/s"
+msgstr "{} Pb/s"
+
+#: src/utils/units.rs:253
+msgid "{} Eb/s"
+msgstr "{} Eb/s"
+
+#: src/utils/units.rs:254
+msgid "{} Zb/s"
+msgstr "{} Zb/s"
+
+#: src/utils/units.rs:255
+msgid "{} Yb/s"
+msgstr "{} Yb/s"
+
+#: src/utils/units.rs:256
+msgid "{} Rb/s"
+msgstr "{} Rb/s"
+
+#: src/utils/units.rs:257
+msgid "{} Qb/s"
+msgstr "{} Qb/s"
+
+#: src/utils/units.rs:265
+msgid "{} Kib/s"
+msgstr "{} Kib/s"
+
+#: src/utils/units.rs:266
+msgid "{} Mib/s"
+msgstr "{} Mib/s"
+
+#: src/utils/units.rs:267
+msgid "{} Gib/s"
+msgstr "{} Gib/s"
+
+#: src/utils/units.rs:268
+msgid "{} Tib/s"
+msgstr "{} Tib/s"
+
+#: src/utils/units.rs:269
+msgid "{} Pib/s"
+msgstr "{} Pib/s"
+
+#: src/utils/units.rs:270
+msgid "{} Eib/s"
+msgstr "{} Eib/s"
+
+#: src/utils/units.rs:271
+msgid "{} Zib/s"
+msgstr "{} Zib/s"
+
+#: src/utils/units.rs:272
+msgid "{} Yib/s"
+msgstr "{} Yib/s"
+
+#: src/utils/units.rs:273
+msgid "{} Rib/s"
+msgstr "{} Rib/s"
+
+#: src/utils/units.rs:274
+msgid "{} Qib/s"
+msgstr "{} Qib/s"
+
+#: src/utils/units.rs:281
+msgid "{} Hz"
+msgstr "{} Hz"
+
+#: src/utils/units.rs:282
+msgid "{} kHz"
+msgstr "{} kHz"
+
+#: src/utils/units.rs:283
+msgid "{} MHz"
+msgstr "{} MHz"
+
+#: src/utils/units.rs:284
+msgid "{} GHz"
+msgstr "{} GHz"
+
+#: src/utils/units.rs:285
+msgid "{} THz"
+msgstr "{} THz"
+
+#: src/utils/units.rs:286
+msgid "{} PHz"
+msgstr "{} PHz"
+
+#: src/utils/units.rs:287
+msgid "{} EHz"
+msgstr "{} EHz"
+
+#: src/utils/units.rs:288
+msgid "{} ZHz"
+msgstr "{} ZHz"
+
+#: src/utils/units.rs:289
+msgid "{} YHz"
+msgstr "{} YHz"
+
+#: src/utils/units.rs:290
+msgid "{} RHz"
+msgstr "{} RHz"
+
+#: src/utils/units.rs:291
+msgid "{} QHz"
+msgstr "{} QHz"
+
+#: src/utils/units.rs:298
+msgid "{} W"
+msgstr "{} W"
+
+#: src/utils/units.rs:299
+msgid "{} kW"
+msgstr "{} kW"
+
+#: src/utils/units.rs:300
+msgid "{} MW"
+msgstr "{} MW"
+
+#: src/utils/units.rs:301
+msgid "{} GW"
+msgstr "{} GW"
+
+#: src/utils/units.rs:302
+msgid "{} TW"
+msgstr "{} TW"
+
+#: src/utils/units.rs:303
+msgid "{} PW"
+msgstr "{} PW"
+
+#: src/utils/units.rs:304
+msgid "{} EW"
+msgstr "{} EW"
+
+#: src/utils/units.rs:305
+msgid "{} ZW"
+msgstr "{} ZW"
+
+#: src/utils/units.rs:306
+msgid "{} YW"
+msgstr "{} YW"
+
+#: src/utils/units.rs:307
+msgid "{} RW"
+msgstr "{} RW"
+
+#: src/utils/units.rs:308
+msgid "{} QW"
+msgstr "{} QW"
+
+#: src/utils/units.rs:317 src/utils/units.rs:331
+msgid "{} Wh"
+msgstr "{} Wh"
+
+#: src/utils/units.rs:318 src/utils/units.rs:332
+msgid "{} kWh"
+msgstr "{} kWh"
+
+#: src/utils/units.rs:319 src/utils/units.rs:333
+msgid "{} MWh"
+msgstr "{} MWh"
+
+#: src/utils/units.rs:320 src/utils/units.rs:334
+msgid "{} GWh"
+msgstr "{} GWh"
+
+#: src/utils/units.rs:321 src/utils/units.rs:335
+msgid "{} TWh"
+msgstr "{} TWh"
+
+#: src/utils/units.rs:322 src/utils/units.rs:336
+msgid "{} PWh"
+msgstr "{} PWh"
+
+#: src/utils/units.rs:323 src/utils/units.rs:337
+msgid "{} EWh"
+msgstr "{} EWh"
+
+#: src/utils/units.rs:324 src/utils/units.rs:338
+msgid "{} ZWh"
+msgstr "{} ZWh"
+
+#: src/utils/units.rs:325 src/utils/units.rs:339
+msgid "{} YWh"
+msgstr "{} YWh"
+
+#: src/utils/units.rs:326 src/utils/units.rs:340
+msgid "{} RWh"
+msgstr "{} RWh"
+
+#: src/utils/units.rs:327 src/utils/units.rs:341
+msgid "{} QWh"
+msgstr "{} QWh"
+
+# Tera-operationer per sekund
+#: src/utils/units.rs:347
+msgid "{} TOPs"
+msgstr "{} TOPs"
+
+#: src/utils/drive.rs:129 src/utils/drive.rs:208
+msgid "CD/DVD/Blu-ray Drive"
+msgstr "CD/DVD/Blu-ray-enhet"
+
+#: src/utils/drive.rs:130
+msgid "eMMC Storage"
+msgstr "eMMC-lagring"
+
+#: src/utils/drive.rs:131
+msgid "Flash Storage"
+msgstr "Flash-lagring"
+
+#: src/utils/drive.rs:132 src/utils/drive.rs:209
+msgid "Floppy Drive"
+msgstr "Diskett"
+
+#: src/utils/drive.rs:133
+msgid "Hard Disk Drive"
+msgstr "Hårddisk"
+
+#: src/utils/drive.rs:134
+msgid "Loop Device"
+msgstr "Loop-enhet"
+
+#: src/utils/drive.rs:135
+msgid "Mapped Device"
+msgstr "Mappad enhet"
+
+#: src/utils/drive.rs:136
+msgid "NVMe Drive"
+msgstr "NVMe-enhet"
+
+#: src/utils/drive.rs:138
+msgid "Software Raid"
+msgstr "Programvaru-RAID"
+
+#: src/utils/drive.rs:139
+msgid "RAM Disk"
+msgstr "RAM-disk"
+
+#: src/utils/drive.rs:140
+msgid "Solid State Drive"
+msgstr "SSD-disk"
+
+#: src/utils/drive.rs:141
+msgid "ZFS Volume"
+msgstr "ZFS-volym"
+
+#: src/utils/drive.rs:142
+msgid "Compressed RAM Disk (zram)"
+msgstr "Komprimerad RAM-disk (zram)"
+
+#: src/utils/drive.rs:210
+msgid "{} Loop Device"
+msgstr "{} loop-enhet"
+
+#: src/utils/drive.rs:211
+msgid "{} Mapped Device"
+msgstr "{} mappad enhet"
+
+#: src/utils/drive.rs:212
+msgid "{} RAID"
+msgstr "{} RAID"
+
+#: src/utils/drive.rs:213
+msgid "{} RAM Disk"
+msgstr "{} RAM-disk"
+
+#: src/utils/drive.rs:214
+msgid "{} zram Device"
+msgstr "{} zram-Enheter"
+
+#: src/utils/drive.rs:215
+msgid "{} ZFS Volume"
+msgstr "{} ZFS-volym"
+
+#: src/utils/drive.rs:216
+msgid "{} Drive"
+msgstr "{} disk"
+
+#: src/utils/link/wifi.rs:158
+msgid "Receive: {}"
+msgstr "Ta emot: {}"
+
+#: src/utils/link/wifi.rs:159
+msgid "Send: {}"
+msgstr "Skicka: {}"
+
+#: src/utils/network.rs:131
+msgid "Bluetooth Tether"
+msgstr "Bluetooth-delning"
+
+#: src/utils/network.rs:132
+msgid "Network Bridge"
+msgstr "Nätverksbrygga"
+
+#: src/utils/network.rs:133
+msgid "Ethernet Connection"
+msgstr "Trådbunden anslutning"
+
+#: src/utils/network.rs:134
+msgid "Docker Bridge"
+msgstr "Docker-brygga"
+
+#: src/utils/network.rs:135
+msgid "InfiniBand Connection"
+msgstr "InfiniBand-anslutning"
+
+#: src/utils/network.rs:136
+msgid "Incus Bridge"
+msgstr "Incus-brygga"
+
+#: src/utils/network.rs:137
+msgid "LXC Bridge"
+msgstr "LXC-brygga"
+
+#: src/utils/network.rs:138
+msgid "LXD Bridge"
+msgstr "LXD-brygga"
+
+#: src/utils/network.rs:139
+msgid "Serial Line IP Connection"
+msgstr "Seriell linje-IP-anslutning"
+
+#: src/utils/network.rs:140
+msgid "VM Network Interface"
+msgstr "VM-nätverksgränssnitt"
+
+#: src/utils/network.rs:141
+msgid "Virtual Ethernet Device"
+msgstr "Virtuell Ethernet-enhet"
+
+#: src/utils/network.rs:142
+msgid "VM Network Bridge"
+msgstr "VM-nätverksbrygga"
+
+#: src/utils/network.rs:143
+msgid "VPN Tunnel"
+msgstr "VPN-tunnel"
+
+#: src/utils/network.rs:144
+msgid "VPN Tunnel (WireGuard)"
+msgstr "VPN-tunnel (WireGuard)"
+
+#: src/utils/network.rs:145
+msgid "Wi-Fi Connection"
+msgstr "Wi-Fi-anslutning"
+
+#: src/utils/network.rs:146
+msgid "WWAN Connection"
+msgstr "WWAN-anslutning"
+
+#~ msgid "Highest:"
+#~ msgstr "Högsta:"
+
+#~ msgid "Yes"
+#~ msgstr "Ja"
+
+#~ msgid "Memory: {}"
+#~ msgstr "Minne: {}"

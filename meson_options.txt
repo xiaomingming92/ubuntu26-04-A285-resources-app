@@ -1,0 +1,10 @@
+option(
+  'profile',
+  type: 'combo',
+  choices: [
+    'default',
+    'development'
+  ],
+  value: 'development',
+  description: 'The build profile for Resources. One of "default" or "development".'
+)
