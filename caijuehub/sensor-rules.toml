@@ -24,3 +24,15 @@ cap_metric = "ppt_fast_limit"
 [gpu_page]
 # 是否显示 PPT Slow / STAPM 两行补充功率（对应 Power Usage 的 PPT Fast）
 show_slow_and_stapm_rows = true
+
+[cpu_page]
+# CPU 页显示“是否降频”一行
+show_throttle_row = true
+# CPU 页显示“功耗墙”一行（PPT Fast/Slow + STAPM 限值）
+show_power_wall_row = true
+# hwmon(k10temp 等)读不到温度时，用 SMU 的 THM 值兜底
+temperature_fallback = true
+# 该 APU 的热降频参考阈值（℃）。2500U 的 Tjmax 约 105℃，实际约 90-95℃ 起明显压频
+thermal_limit_c = 95.0
+# 实际功率达到限值该比例即视为“撞功耗墙”
+power_wall_ratio = 0.98

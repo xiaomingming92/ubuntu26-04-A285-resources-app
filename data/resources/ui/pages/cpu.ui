@@ -82,6 +82,24 @@
                   <object class="AdwPreferencesGroup">
                     <property name="title" translatable="yes">Properties</property>
                     <child>
+                      <object class="AdwActionRow" id="throttling">
+                        <style>
+                          <class name="property"/>
+                        </style>
+                        <property name="subtitle-selectable">true</property>
+                        <property name="title" translatable="yes">Throttling</property>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="AdwActionRow" id="power_limit">
+                        <style>
+                          <class name="property"/>
+                        </style>
+                        <property name="subtitle-selectable">true</property>
+                        <property name="title" translatable="yes">Power Limit</property>
+                      </object>
+                    </child>
+                    <child>
                       <object class="AdwActionRow" id="max_speed">
                         <style>
                           <class name="property"/>

@@ -26,7 +26,23 @@ src/caijuehub/
 
 | ID | 规则 | 产出 | 消费方 |
 |----|------|------|--------|
-| `amd-sensor-adjudication` | `sensor-rules.toml` | `src/caijuehub/strategies/sensor.strategy.rs` | `smu.rs`、`utils/gpu/mod.rs`、`ui/pages/gpu.rs` |
+| `amd-sensor-adjudication` | `sensor-rules.toml` | `src/caijuehub/strategies/sensor.strategy.rs` | `smu.rs`、`utils/gpu/mod.rs`、`ui/pages/gpu.rs`、`utils/cpu.rs`、`ui/pages/cpu.rs` |
+
+## CPU 温度 / 降频裁决（`[cpu_page]`）
+
+`sensor-rules.toml` 的 `[cpu_page]` 控制 CPU 页的“是否降频”和“功耗墙”：
+
+| 键 | 含义 |
+|----|------|
+| `show_throttle_row` | 显示 `Throttling` 行 |
+| `show_power_wall_row` | 显示 `Power Limit` 行（PPT Fast/Slow + STAPM 限值） |
+| `temperature_fallback` | hwmon（k10temp 等）读不到时用 SMU `THM VALUE` 兜底 |
+| `thermal_limit_c` | 热降频参考阈值（℃）；SMU 有 `THM LIMIT` 时优先用 SMU 值 |
+| `power_wall_ratio` | 实际功率达到限值该比例即判为撞功耗墙 |
+
+降频判据：`THM VALUE` 达到温度阈值 → Thermal；任一 PPT/STAPM 实际值达到
+限值的 `power_wall_ratio` 倍 → Power；两者可同时命中。指标经 helper
+`resources-amdgpu-sensors` 从 RyzenAdj `--info` 解析（`THM VALUE` / `THM LIMIT`）。
 
 ## 改规则（改规则不改代码）
 

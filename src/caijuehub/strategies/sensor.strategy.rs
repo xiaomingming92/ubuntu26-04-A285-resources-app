@@ -22,6 +22,16 @@ pub const POWER_CAP_METRIC: &str = "ppt_fast_limit";
 
 pub const GPU_PAGE_SHOW_SLOW_AND_STAPM_ROWS: bool = true;
 
+pub const CPU_PAGE_SHOW_THROTTLE_ROW: bool = true;
+
+pub const CPU_PAGE_SHOW_POWER_WALL_ROW: bool = true;
+
+pub const CPU_TEMPERATURE_FALLBACK: bool = true;
+
+pub const CPU_THERMAL_LIMIT_C: f64 = 95.0;
+
+pub const CPU_POWER_WALL_RATIO: f64 = 0.98;
+
 #[must_use]
 pub fn fallback_power_usage(metrics: &AmdSmuMetrics) -> Option<f64> {
     metrics.metric(POWER_VALUE_METRIC)
@@ -30,4 +40,9 @@ pub fn fallback_power_usage(metrics: &AmdSmuMetrics) -> Option<f64> {
 #[must_use]
 pub fn fallback_power_cap(metrics: &AmdSmuMetrics) -> Option<f64> {
     metrics.metric(POWER_CAP_METRIC)
+}
+
+#[must_use]
+pub fn fallback_cpu_temperature(metrics: &AmdSmuMetrics) -> Option<f64> {
+    metrics.temperature_c
 }

@@ -34,10 +34,16 @@ def rust_str(value: object) -> str:
     return f'"{value}"'
 
 
+def rust_f64(value: object) -> str:
+    result = repr(float(value))
+    return result if ("." in result or "e" in result or "E" in result) else f"{result}.0"
+
+
 def generate_amd_sensor(rules: dict) -> str:
     smu = rules["smu"]
     fallback = smu["power_fallback"]
     gpu_page = rules["gpu_page"]
+    cpu_page = rules.get("cpu_page", {})
 
     lines = [
         HEADER,
@@ -67,6 +73,21 @@ def generate_amd_sensor(rules: dict) -> str:
         "pub const GPU_PAGE_SHOW_SLOW_AND_STAPM_ROWS: bool = "
         f"{rust_bool(gpu_page.get('show_slow_and_stapm_rows', True))};",
         "",
+        "pub const CPU_PAGE_SHOW_THROTTLE_ROW: bool = "
+        f"{rust_bool(cpu_page.get('show_throttle_row', True))};",
+        "",
+        "pub const CPU_PAGE_SHOW_POWER_WALL_ROW: bool = "
+        f"{rust_bool(cpu_page.get('show_power_wall_row', True))};",
+        "",
+        "pub const CPU_TEMPERATURE_FALLBACK: bool = "
+        f"{rust_bool(cpu_page.get('temperature_fallback', True))};",
+        "",
+        "pub const CPU_THERMAL_LIMIT_C: f64 = "
+        f"{rust_f64(cpu_page.get('thermal_limit_c', 95.0))};",
+        "",
+        "pub const CPU_POWER_WALL_RATIO: f64 = "
+        f"{rust_f64(cpu_page.get('power_wall_ratio', 0.98))};",
+        "",
         "#[must_use]",
         "pub fn fallback_power_usage(metrics: &AmdSmuMetrics) -> Option<f64> {",
         f"    metrics.metric(POWER_VALUE_METRIC)",
@@ -75,6 +96,11 @@ def generate_amd_sensor(rules: dict) -> str:
         "#[must_use]",
         "pub fn fallback_power_cap(metrics: &AmdSmuMetrics) -> Option<f64> {",
         "    metrics.metric(POWER_CAP_METRIC)",
+        "}",
+        "",
+        "#[must_use]",
+        "pub fn fallback_cpu_temperature(metrics: &AmdSmuMetrics) -> Option<f64> {",
+        "    metrics.temperature_c",
         "}",
         "",
     ]

@@ -37,6 +37,21 @@ fn parse_ryzenadj_info(stdout: &str) -> AmdSmuMetrics {
             "PPT VALUE FAST" => metrics.ppt_fast_value_w = value,
             "PPT LIMIT SLOW" => metrics.ppt_slow_limit_w = value,
             "PPT VALUE SLOW" => metrics.ppt_slow_value_w = value,
+            // RyzenAdj reports the die temperature as e.g. "THM VALUE" and the
+            // thermal limit as "THM LIMIT". Keep this tolerant so renamed rows
+            // (e.g. "THM VALUE CORE") still work.
+            name if name.contains("THM") && name.contains("VALUE") => {
+                if let Some(value) = value {
+                    metrics.temperature_c =
+                        Some(metrics.temperature_c.map_or(value, |old| old.max(value)));
+                }
+            }
+            name if name.contains("THM") && name.contains("LIMIT") => {
+                if let Some(value) = value {
+                    metrics.temperature_limit_c =
+                        Some(metrics.temperature_limit_c.map_or(value, |old| old.min(value)));
+                }
+            }
             _ => {}
         }
     }
@@ -82,12 +97,22 @@ fn send_metrics_text(metrics: &AmdSmuMetrics, stdout: &mut impl Write) -> Result
     writeln!(stdout, "PPT VALUE FAST = {}", power_text(metrics.ppt_fast_value_w))?;
     writeln!(stdout, "PPT LIMIT SLOW = {}", power_text(metrics.ppt_slow_limit_w))?;
     writeln!(stdout, "PPT VALUE SLOW = {}", power_text(metrics.ppt_slow_value_w))?;
+    writeln!(stdout, "THM VALUE = {}", temperature_text(metrics.temperature_c))?;
+    writeln!(
+        stdout,
+        "THM LIMIT = {}",
+        temperature_text(metrics.temperature_limit_c)
+    )?;
     stdout.flush()?;
     Ok(())
 }
 
 fn power_text(value: Option<f64>) -> String {
     value.map_or_else(|| "N/A".to_string(), |value| format!("{value:.3} W"))
+}
+
+fn temperature_text(value: Option<f64>) -> String {
+    value.map_or_else(|| "N/A".to_string(), |value| format!("{value:.1} °C"))
 }
 
 fn main() -> Result<()> {

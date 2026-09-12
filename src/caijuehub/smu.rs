@@ -32,6 +32,10 @@ pub struct AmdSmuMetrics {
     pub ppt_fast_value_w: Option<f64>,
     pub ppt_slow_limit_w: Option<f64>,
     pub ppt_slow_value_w: Option<f64>,
+    /// Die temperature reported by the SMU (`THM VALUE`), in degrees Celsius.
+    pub temperature_c: Option<f64>,
+    /// SMU thermal limit (`THM LIMIT`), in degrees Celsius.
+    pub temperature_limit_c: Option<f64>,
 }
 
 impl AmdSmuMetrics {
@@ -43,6 +47,8 @@ impl AmdSmuMetrics {
             && self.ppt_fast_value_w.is_none()
             && self.ppt_slow_limit_w.is_none()
             && self.ppt_slow_value_w.is_none()
+            && self.temperature_c.is_none()
+            && self.temperature_limit_c.is_none()
     }
 
     /// Returns one of the metric names declared in `sensor-rules.toml`
@@ -56,6 +62,8 @@ impl AmdSmuMetrics {
             "ppt_fast_value" => self.ppt_fast_value_w,
             "ppt_slow_limit" => self.ppt_slow_limit_w,
             "ppt_slow_value" => self.ppt_slow_value_w,
+            "temperature" => self.temperature_c,
+            "temperature_limit" => self.temperature_limit_c,
             _ => None,
         }
     }

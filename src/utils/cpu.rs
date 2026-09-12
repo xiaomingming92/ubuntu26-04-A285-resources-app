@@ -1,13 +1,17 @@
 use anyhow::{Context, Result, anyhow, bail};
 use glob::glob;
 use lazy_regex::{Lazy, Regex, lazy_regex};
-use log::{debug, trace, warn};
+use log::{debug, trace};
 use std::{
     collections::HashMap,
     path::{Path, PathBuf},
-    sync::LazyLock,
+    sync::{LazyLock, Mutex},
 };
 
+use crate::caijuehub::{
+    smu::{self, AmdSmuMetrics},
+    strategies::sensor,
+};
 use crate::utils::read_parsed;
 
 const PROC_STAT: &str = "/proc/stat";
@@ -34,14 +38,17 @@ static RE_PROC_STAT: Lazy<Regex> = lazy_regex!(
     r"cpu\d+ *(?P<user>\d*) *(?P<nice>\d*) *(?P<system>\d*) *(?P<idle>\d*) *(?P<iowait>\d*) *(?P<irq>\d*) *(?P<softirq>\d*) *(?P<steal>\d*) *(?P<guest>\d*) *(?P<guest_nice>\d*)"
 );
 
-static CPU_TEMPERATURE_PATH: LazyLock<Option<PathBuf>> = LazyLock::new(|| {
+static CPU_TEMPERATURE_PATH: LazyLock<Mutex<Option<PathBuf>>> =
+    LazyLock::new(|| Mutex::new(find_cpu_temperature_path()));
+
+fn find_cpu_temperature_path() -> Option<PathBuf> {
     search_for_hwmons(KNOWN_HWMONS)
         .or_else(|| search_for_thermal_zones(KNOWN_THERMAL_ZONES))
         .or_else(|| {
-            warn!("No CPU temperature sensor found!");
+            debug!("No CPU temperature sensor found!");
             None
         })
-});
+}
 
 fn search_for_cpu_temp<S: AsRef<str>>(base_path: S) -> Option<PathBuf> {
     let base = base_path.as_ref();
@@ -126,10 +133,22 @@ fn search_for_thermal_zones(types: &[&'static str]) -> Option<PathBuf> {
 }
 
 #[derive(Debug)]
+pub enum ThrottleState {
+    None,
+    Thermal,
+    Power,
+    ThermalAndPower,
+    Unknown,
+}
+
+#[derive(Debug)]
 pub struct CpuData {
     pub new_thread_usages: Vec<Result<(u64, u64)>>,
     pub temperature: Result<f32, anyhow::Error>,
     pub frequencies: Vec<Option<u64>>,
+    /// AMD SMU metrics (power limits/draw + THM temperature); `None` on non-AMD.
+    pub smu_metrics: Option<AmdSmuMetrics>,
+    pub throttle: ThrottleState,
 }
 
 impl CpuData {
@@ -137,7 +156,25 @@ impl CpuData {
         trace!("Gathering CPU data…");
         let new_thread_usages = get_cpu_usage();
 
-        let temperature = get_temperature();
+        let mut temperature = get_temperature();
+
+        let smu_metrics = if sensor::SMU_ENABLED && is_amd_cpu() {
+            let metrics = smu::read_metrics();
+            if metrics.is_empty() { None } else { Some(metrics) }
+        } else {
+            None
+        };
+
+        if temperature.is_err() && sensor::CPU_TEMPERATURE_FALLBACK {
+            if let Some(temperature_c) = smu_metrics
+                .as_ref()
+                .and_then(sensor::fallback_cpu_temperature)
+            {
+                temperature = Ok(temperature_c as f32);
+            }
+        }
+
+        let throttle = compute_throttle(temperature.as_ref().ok().copied(), smu_metrics.as_ref());
 
         let mut frequencies = Vec::with_capacity(logical_cpus);
 
@@ -150,11 +187,55 @@ impl CpuData {
             new_thread_usages,
             temperature,
             frequencies,
+            smu_metrics,
+            throttle,
         };
 
         trace!("Gathered CPU data: {cpu_data:?}");
 
         cpu_data
+    }
+}
+
+fn is_amd_cpu() -> bool {
+    std::fs::read_to_string("/proc/cpuinfo")
+        .map(|contents| contents.contains("AuthenticAMD"))
+        .unwrap_or(false)
+}
+
+fn thermal_limit(metrics: Option<&AmdSmuMetrics>) -> f64 {
+    metrics
+        .and_then(|metrics| metrics.temperature_limit_c)
+        .unwrap_or(sensor::CPU_THERMAL_LIMIT_C)
+}
+
+fn compute_throttle(temperature: Option<f32>, metrics: Option<&AmdSmuMetrics>) -> ThrottleState {
+    if temperature.is_none() && metrics.is_none() {
+        return ThrottleState::Unknown;
+    }
+
+    let thermal = temperature.is_some_and(|temp| f64::from(temp) >= thermal_limit(metrics));
+
+    let power = metrics.is_some_and(|metrics| {
+        [
+            (metrics.ppt_fast_value_w, metrics.ppt_fast_limit_w),
+            (metrics.ppt_slow_value_w, metrics.ppt_slow_limit_w),
+            (metrics.stapm_value_w, metrics.stapm_limit_w),
+        ]
+        .into_iter()
+        .any(|(value, limit)| match (value, limit) {
+            (Some(value), Some(limit)) => {
+                limit > 0.0 && value >= limit * sensor::CPU_POWER_WALL_RATIO
+            }
+            _ => false,
+        })
+    });
+
+    match (thermal, power) {
+        (true, true) => ThrottleState::ThermalAndPower,
+        (true, false) => ThrottleState::Thermal,
+        (false, true) => ThrottleState::Power,
+        (false, false) => ThrottleState::None,
     }
 }
 
@@ -343,10 +424,38 @@ pub fn get_cpu_usage() -> Vec<Result<(u64, u64)>> {
 ///
 /// Will return `Err` if there was no way to read the CPU temperature.
 pub fn get_temperature() -> Result<f32> {
-    if let Some(path) = CPU_TEMPERATURE_PATH.as_ref() {
-        read_sysfs_thermal(path)
-    } else {
-        bail!("no CPU temperature sensor found")
+    // Fast path: keep using the cached sensor as long as it still reads.
+    {
+        let guard = CPU_TEMPERATURE_PATH.lock().unwrap();
+        if let Some(path) = guard.as_ref() {
+            if let Ok(temperature) = read_sysfs_thermal(path) {
+                return Ok(temperature);
+            }
+        }
+    }
+
+    // The sensor may have appeared (e.g. k10temp finished loading after
+    // Resources started) or disappeared since the last probe, so search again
+    // instead of caching "no sensor" for the rest of the process lifetime.
+    let mut guard = CPU_TEMPERATURE_PATH.lock().unwrap();
+
+    // Another thread may have refreshed the path while we waited for the lock.
+    if let Some(path) = guard.as_ref() {
+        if let Ok(temperature) = read_sysfs_thermal(path) {
+            return Ok(temperature);
+        }
+    }
+
+    match find_cpu_temperature_path() {
+        Some(path) => {
+            let temperature = read_sysfs_thermal(&path);
+            *guard = Some(path);
+            temperature
+        }
+        None => {
+            *guard = None;
+            bail!("no CPU temperature sensor found")
+        }
     }
 }
 

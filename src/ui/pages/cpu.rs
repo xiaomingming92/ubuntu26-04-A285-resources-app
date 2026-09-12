@@ -8,10 +8,10 @@ use log::trace;
 use crate::config::PROFILE;
 use crate::i18n::{i18n, i18n_f};
 use crate::ui::widgets::graph_box::ResGraphBox;
-use crate::utils::cpu::{CpuData, CpuInfo};
+use crate::utils::cpu::{CpuData, CpuInfo, ThrottleState};
 use crate::utils::settings::SETTINGS;
 use crate::utils::units::{
-    convert_fraction, convert_frequency, convert_temperature, format_time_integer,
+    convert_fraction, convert_frequency, convert_power, convert_temperature, format_time_integer,
 };
 use crate::utils::{FiniteOr, NUM_CPUS, boot_time};
 
@@ -48,6 +48,10 @@ mod imp {
         pub thread_box: TemplateChild<gtk::FlowBox>,
         #[template_child]
         pub max_speed: TemplateChild<adw::ActionRow>,
+        #[template_child]
+        pub throttling: TemplateChild<adw::ActionRow>,
+        #[template_child]
+        pub power_limit: TemplateChild<adw::ActionRow>,
         #[template_child]
         pub logical_cpus: TemplateChild<adw::ActionRow>,
         #[template_child]
@@ -115,6 +119,8 @@ mod imp {
                 total_cpu: Default::default(),
                 thread_box: Default::default(),
                 max_speed: Default::default(),
+                throttling: Default::default(),
+                power_limit: Default::default(),
                 logical_cpus: Default::default(),
                 physical_cpus: Default::default(),
                 sockets: Default::default(),
@@ -222,6 +228,8 @@ impl ResCPU {
             new_thread_usages,
             temperature: _,
             frequencies: _,
+            smu_metrics: _,
+            throttle: _,
         } = CpuData::new(logical_cpus);
 
         let old_total_usage = new_thread_usages
@@ -273,6 +281,9 @@ impl ResCPU {
         imp.temperature.set_title_label(&i18n("Temperature"));
         imp.temperature.graph().set_graph_color(0x1a, 0x5f, 0xb4);
         imp.temperature.graph().set_locked_max_y(None);
+
+        imp.throttling.set_subtitle(&i18n("N/A"));
+        imp.power_limit.set_subtitle(&i18n("N/A"));
 
         imp.max_speed.set_subtitle(
             &cpu_info
@@ -358,6 +369,8 @@ impl ResCPU {
             new_thread_usages,
             temperature,
             frequencies,
+            smu_metrics,
+            throttle,
         } = cpu_data;
 
         let imp = self.imp();
@@ -429,6 +442,28 @@ impl ResCPU {
 
         imp.temperature
             .add_temperature_point(temperature.as_ref().ok().map(|temp| *temp as f64));
+
+        imp.throttling.set_subtitle(&match throttle {
+            ThrottleState::None => i18n("No"),
+            ThrottleState::Thermal => i18n("Yes · Thermal"),
+            ThrottleState::Power => i18n("Yes · Power"),
+            ThrottleState::ThermalAndPower => i18n("Yes · Thermal + Power"),
+            ThrottleState::Unknown => i18n("N/A"),
+        });
+
+        let power_limit_string = smu_metrics.as_ref().map_or_else(
+            || i18n("N/A"),
+            |metrics| {
+                let fmt = |value: Option<f64>| value.map_or_else(|| i18n("N/A"), convert_power);
+                format!(
+                    "PPT Fast {} · Slow {} · STAPM {}",
+                    fmt(metrics.ppt_fast_limit_w),
+                    fmt(metrics.ppt_slow_limit_w),
+                    fmt(metrics.stapm_limit_w),
+                )
+            },
+        );
+        imp.power_limit.set_subtitle(&power_limit_string);
 
         if let Ok(temperature) = temperature {
             percentage_string.push_str(" · ");
