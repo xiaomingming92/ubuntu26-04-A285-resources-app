@@ -50,6 +50,10 @@ pub struct GpuData {
     pub total_vram: Option<u64>,
     pub used_vram: Option<u64>,
 
+    /// System RAM dynamically borrowed by the GPU (GTT / shared); AMD APUs only.
+    pub total_vram_shared: Option<u64>,
+    pub used_vram_shared: Option<u64>,
+
     pub clock_speed: Option<f64>,
     pub vram_speed: Option<f64>,
 
@@ -81,6 +85,9 @@ impl GpuData {
 
         let total_vram = gpu.total_vram().ok();
         let used_vram = gpu.used_vram().ok();
+
+        let total_vram_shared = gpu.drm_total_shared_vram().ok().map(|value| value as u64);
+        let used_vram_shared = gpu.drm_used_shared_vram().ok().map(|value| value as u64);
 
         let clock_speed = gpu.core_frequency().ok();
         let vram_speed = gpu.vram_frequency().ok();
@@ -128,6 +135,8 @@ impl GpuData {
             decode_fraction,
             total_vram,
             used_vram,
+            total_vram_shared,
+            used_vram_shared,
             clock_speed,
             vram_speed,
             temperature,
@@ -193,11 +202,28 @@ pub trait GpuImpl {
     }
 
     fn drm_used_vram(&self) -> Result<isize> {
-        read_parsed(self.sysfs_path().join("device/mem_info_vram_used"))
+        // On AMD APUs the iGPU can additionally borrow system RAM via GTT.
+        // Include it so the reported "video memory" reflects the real,
+        // dynamic pool instead of only the fixed UMA carve-out.
+        let vram = read_parsed::<isize>(self.sysfs_path().join("device/mem_info_vram_used"))?;
+        let gtt = read_parsed::<isize>(self.sysfs_path().join("device/mem_info_gtt_used")).unwrap_or(0);
+        Ok(vram + gtt)
     }
 
     fn drm_total_vram(&self) -> Result<isize> {
-        read_parsed(self.sysfs_path().join("device/mem_info_vram_total"))
+        let vram = read_parsed::<isize>(self.sysfs_path().join("device/mem_info_vram_total"))?;
+        let gtt = read_parsed::<isize>(self.sysfs_path().join("device/mem_info_gtt_total")).unwrap_or(0);
+        Ok(vram + gtt)
+    }
+
+    /// Shared (GTT) portion of the video memory. Only present on AMD devices;
+    /// other drivers simply fail to read it and we fall back to `None`.
+    fn drm_used_shared_vram(&self) -> Result<isize> {
+        read_parsed(self.sysfs_path().join("device/mem_info_gtt_used"))
+    }
+
+    fn drm_total_shared_vram(&self) -> Result<isize> {
+        read_parsed(self.sysfs_path().join("device/mem_info_gtt_total"))
     }
 
     fn hwmon_path(&self) -> Result<&Path> {

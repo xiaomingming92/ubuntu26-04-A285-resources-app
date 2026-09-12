@@ -10,7 +10,7 @@ use crate::i18n::i18n;
 use crate::ui::{gpu_npu_usage_string, set_subtitle_converted_maybe};
 use crate::utils::gpu::{Gpu, GpuData};
 use crate::utils::link::Link;
-use crate::utils::units::{convert_fraction, convert_frequency, convert_power};
+use crate::utils::units::{convert_fraction, convert_frequency, convert_power, convert_storage};
 
 pub const TAB_ID_PREFIX: &str = "gpu";
 
@@ -297,6 +297,8 @@ impl ResGPU {
             decode_fraction,
             total_vram,
             used_vram,
+            total_vram_shared,
+            used_vram_shared,
             clock_speed,
             vram_speed,
             temperature,
@@ -352,6 +354,23 @@ impl ResGPU {
             .set_visible(encode_fraction.is_some() || decode_fraction.is_some());
 
         imp.vram_usage.add_storage_point(*used_vram, *total_vram);
+
+        // On AMD APUs the total pool is the fixed UMA carve-out plus a dynamic
+        // shared (GTT) borrow. Split the total in the subtitle so it's obvious
+        // that the 1 GB dedicated value is not the real ceiling.
+        if let (Some(used), Some(total), Some(_shared_used), Some(shared_total)) =
+            (*used_vram, *total_vram, *used_vram_shared, *total_vram_shared)
+        {
+            let dedicated_total = total.saturating_sub(shared_total);
+            let subtitle = format!(
+                "{} / {} + {} · {}",
+                convert_storage(used as f64, false),
+                convert_storage(dedicated_total as f64, false),
+                convert_storage(shared_total as f64, false),
+                convert_fraction(used as f64 / total as f64, true),
+            );
+            imp.vram_usage.set_subtitle(&subtitle);
+        }
 
         let mut power_string = power_usage.map_or_else(|| i18n("N/A"), convert_power);
 
