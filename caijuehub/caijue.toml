@@ -17,3 +17,21 @@ rules = "sensor-rules.toml"
 implementation = "src/caijuehub/strategies/sensor.strategy.rs"
 line_type = "rust-strategy"
 approval = "auto"
+
+[[caijue]]
+id = "battery-charge-threshold"
+type = "strategy"
+description = "电池充电阈值裁决：sysfs 属性名与回退、helper 路径、范围/步进、写入后是否通知 UPower"
+rules = "battery-rules.toml"
+implementation = "src/caijuehub/strategies/battery.strategy.rs"
+line_type = "rust-strategy"
+approval = "auto"
+
+[[caijue]]
+id = "process-adjudication"
+type = "strategy"
+description = "进程页裁决：端口采集协议/过滤、系统与用户归属阈值、孤儿判定、默认分组方式"
+rules = "process-rules.toml"
+implementation = "src/caijuehub/strategies/process.strategy.rs"
+line_type = "rust-strategy"
+approval = "auto"

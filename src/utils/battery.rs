@@ -5,6 +5,7 @@ use std::{
 };
 
 use crate::{
+    caijuehub::strategies::battery as strategy,
     i18n::{i18n, i18n_f},
     utils::read_parsed,
 };
@@ -162,6 +163,9 @@ pub struct Battery {
     pub model_name: Option<String>,
     pub design_capacity: Option<f64>,
     pub technology: Technology,
+    /// Kernel charge-control thresholds, when the battery supports them.
+    pub charge_start_threshold: Option<u32>,
+    pub charge_end_threshold: Option<u32>,
 }
 
 impl Battery {
@@ -220,12 +224,26 @@ impl Battery {
             .map(|capacity| capacity / 1_000_000.0)
             .ok();
 
+        let charge_start_threshold = read_threshold(
+            &sysfs_path,
+            strategy::START_ATTRIBUTE,
+            strategy::FALLBACK_START_ATTRIBUTE,
+        );
+
+        let charge_end_threshold = read_threshold(
+            &sysfs_path,
+            strategy::END_ATTRIBUTE,
+            strategy::FALLBACK_END_ATTRIBUTE,
+        );
+
         let battery = Battery {
             sysfs_path: sysfs_path.clone(),
             manufacturer,
             model_name,
             design_capacity,
             technology,
+            charge_start_threshold,
+            charge_end_threshold,
         };
 
         trace!("Created Battery object of {sysfs_path:?}: {battery:?}");
@@ -332,6 +350,25 @@ impl Battery {
         read_parsed(self.sysfs_path.join("cycle_count"))
             .context("unable to parse cycle_count sysfs file")
     }
+
+    pub fn supports_charge_threshold(&self) -> bool {
+        self.charge_start_threshold.is_some() && self.charge_end_threshold.is_some()
+    }
+
+    /// A limit is active whenever the battery is not configured for maximum
+    /// charge (start 0 / end 100).
+    pub fn charge_threshold_active(&self) -> bool {
+        match (self.charge_start_threshold, self.charge_end_threshold) {
+            (Some(start), Some(end)) => start > 0 || end < strategy::MAXIMUM,
+            _ => false,
+        }
+    }
+}
+
+fn read_threshold(sysfs_path: &Path, primary: &str, fallback: &str) -> Option<u32> {
+    read_parsed::<u32>(sysfs_path.join(primary))
+        .or_else(|_| read_parsed::<u32>(sysfs_path.join(fallback)))
+        .ok()
 }
 
 #[cfg(test)]

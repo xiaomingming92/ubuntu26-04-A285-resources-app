@@ -91,6 +91,12 @@ mod imp {
         #[template_child]
         pub search_entry: TemplateChild<gtk::SearchEntry>,
         #[template_child]
+        pub listening_filter: TemplateChild<gtk::ToggleButton>,
+        #[template_child]
+        pub own_user_filter: TemplateChild<gtk::ToggleButton>,
+        #[template_child]
+        pub orphan_filter: TemplateChild<gtk::ToggleButton>,
+        #[template_child]
         pub processes_scrolled_window: TemplateChild<gtk::ScrolledWindow>,
         #[template_child]
         pub options_button: TemplateChild<gtk::Button>,
@@ -160,6 +166,9 @@ mod imp {
                 popover_menu_multiple: Default::default(),
                 search_bar: Default::default(),
                 search_entry: Default::default(),
+                listening_filter: Default::default(),
+                own_user_filter: Default::default(),
+                orphan_filter: Default::default(),
                 processes_scrolled_window: Default::default(),
                 options_button: Default::default(),
                 information_button: Default::default(),
@@ -791,6 +800,8 @@ impl ResProcesses {
             settings_show: processes_show_commandline,
             settings_connect: connect_processes_show_commandline,
         ));
+
+        columns.push(self.add_ports_column(&column_view));
     }
 
     pub fn setup_signals(&self) {
@@ -831,12 +842,21 @@ impl ResProcesses {
             #[strong(rename_to = this)]
             self,
             move |_| {
-                let imp = this.imp();
-                if let Some(filter) = imp.filter_model.borrow().filter() {
-                    filter.changed(FilterChange::Different);
-                }
+                this.refilter();
             }
         ));
+
+        for toggle in [
+            imp.listening_filter.clone(),
+            imp.own_user_filter.clone(),
+            imp.orphan_filter.clone(),
+        ] {
+            toggle.connect_toggled(clone!(
+                #[weak(rename_to = this)]
+                self,
+                move |_| this.refilter()
+            ));
+        }
 
         let event_controller = EventControllerKey::new();
         event_controller.connect_key_released(clone!(
@@ -993,16 +1013,39 @@ impl ResProcesses {
         let imp = self.imp();
 
         let item = obj.downcast_ref::<ProcessEntry>().unwrap();
+
+        if imp.listening_filter.is_active() && !item.has_listening_port() {
+            return false;
+        }
+
+        if imp.own_user_filter.is_active() && item.uid() != unsafe { libc::getuid() } {
+            return false;
+        }
+
+        if imp.orphan_filter.is_active() && !item.orphan() {
+            return false;
+        }
+
         let item_name = item.name().to_lowercase();
         let item_commandline = item.commandline().to_lowercase();
+        let item_ports = item.ports().to_lowercase();
 
         let lowered_search_entry_text = imp.search_entry.text().to_lowercase();
         let search_strings: Vec<&str> = lowered_search_entry_text.split('|').collect();
 
         !imp.search_bar.is_search_mode()
             || search_strings.iter().any(|search_string| {
-                item_name.contains(search_string) || item_commandline.contains(search_string)
+                item_name.contains(search_string)
+                    || item_commandline.contains(search_string)
+                    || item_ports.contains(search_string)
             })
+    }
+
+    fn refilter(&self) {
+        let imp = self.imp();
+        if let Some(filter) = imp.filter_model.borrow().filter() {
+            filter.changed(FilterChange::Different);
+        }
     }
 
     pub fn get_selected_process_entries(&self) -> Vec<ProcessEntry> {
@@ -1202,6 +1245,35 @@ impl ResProcesses {
         );
 
         dialog.present(Some(&MainWindow::default()));
+    }
+
+    fn add_ports_column(&self, column_view: &ColumnView) -> ColumnViewColumn {
+        let factory = gtk::SignalListItemFactory::new();
+
+        let col = gtk::ColumnViewColumn::new(Some(&i18n("Ports")), Some(factory.clone()));
+        col.set_resizable(true);
+
+        factory.connect_setup(move |_factory, item| {
+            let item = item.downcast_ref::<gtk::ListItem>().unwrap();
+
+            let row = gtk::Inscription::new(None);
+            row.set_min_chars(8);
+
+            item.property_expression("item")
+                .chain_property::<ProcessEntry>("ports")
+                .bind(&row, "text", gtk::Widget::NONE);
+
+            item.set_child(Some(&row));
+        });
+
+        factory.connect_teardown(move |_factory, item| {
+            let item = item.downcast_ref::<gtk::ListItem>().unwrap();
+            item.set_child(None::<&gtk::Inscription>);
+        });
+
+        column_view.append_column(&col);
+
+        col
     }
 
     fn add_name_column(&self, column_view: &ColumnView) -> ColumnViewColumn {

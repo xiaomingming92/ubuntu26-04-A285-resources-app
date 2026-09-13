@@ -3,10 +3,11 @@ use gtk::glib;
 use log::trace;
 use std::fmt::Write;
 
-use crate::config::PROFILE;
+use crate::caijuehub::strategies::battery as strategy;
+use crate::config::{LIBEXECDIR, PROFILE};
 use crate::i18n::i18n;
 use crate::ui::set_subtitle_converted_maybe;
-use crate::utils::battery::BatteryData;
+use crate::utils::battery::{Battery, BatteryData};
 use crate::utils::units::{convert_energy, convert_fraction, convert_power};
 
 pub const TAB_ID_PREFIX: &str = "battery";
@@ -46,6 +47,21 @@ mod imp {
         pub model_name: TemplateChild<adw::ActionRow>,
         #[template_child]
         pub device: TemplateChild<adw::ActionRow>,
+        #[template_child]
+        pub threshold_group: TemplateChild<adw::PreferencesGroup>,
+        #[template_child]
+        pub threshold_enabled: TemplateChild<adw::SwitchRow>,
+        #[template_child]
+        pub threshold_start: TemplateChild<adw::SpinRow>,
+        #[template_child]
+        pub threshold_stop: TemplateChild<adw::SpinRow>,
+        #[template_child]
+        pub threshold_hint: TemplateChild<adw::ActionRow>,
+
+        /// sysfs directory of the battery currently shown on this page.
+        pub threshold_sysfs_path: RefCell<Option<std::path::PathBuf>>,
+        /// Guards programmatic widget updates so they don't trigger a write.
+        pub threshold_updating: Cell<bool>,
 
         #[property(get)]
         uses_progress_bar: Cell<bool>,
@@ -97,6 +113,13 @@ mod imp {
                 manufacturer: Default::default(),
                 model_name: Default::default(),
                 device: Default::default(),
+                threshold_group: Default::default(),
+                threshold_enabled: Default::default(),
+                threshold_start: Default::default(),
+                threshold_stop: Default::default(),
+                threshold_hint: Default::default(),
+                threshold_sysfs_path: RefCell::new(None),
+                threshold_updating: Cell::new(false),
                 uses_progress_bar: Cell::new(true),
                 main_graph_color: glib::Bytes::from_static(&super::ResBattery::MAIN_GRAPH_COLOR),
                 icon: RefCell::new(ThemedIcon::new("battery-symbolic").into()),
@@ -238,7 +261,142 @@ impl ResBattery {
         imp.device
             .set_subtitle(&battery.sysfs_path.file_name().unwrap().to_string_lossy());
 
+        *imp.threshold_sysfs_path.borrow_mut() = Some(battery.sysfs_path.clone());
+
+        if battery.supports_charge_threshold() {
+            imp.threshold_group.set_visible(true);
+
+            let this = self.clone();
+            imp.threshold_enabled
+                .connect_active_notify(move |_| this.apply_charge_threshold());
+
+            let this = self.clone();
+            imp.threshold_start
+                .connect_value_notify(move |_| this.on_threshold_spin_changed());
+
+            let this = self.clone();
+            imp.threshold_stop
+                .connect_value_notify(move |_| this.on_threshold_spin_changed());
+
+            self.sync_threshold_widgets(battery);
+        } else {
+            imp.threshold_group.set_visible(false);
+        }
+
         imp.set_tab_detail_string(&battery.sysfs_path.file_name().unwrap().to_string_lossy());
+    }
+
+    fn sync_threshold_widgets(&self, battery: &Battery) {
+        let imp = self.imp();
+
+        if !battery.supports_charge_threshold() {
+            return;
+        }
+
+        imp.threshold_updating.set(true);
+
+        imp.threshold_enabled
+            .set_active(battery.charge_threshold_active());
+
+        if let Some(start) = battery.charge_start_threshold {
+            imp.threshold_start.set_value(f64::from(start));
+        }
+
+        if let Some(end) = battery.charge_end_threshold {
+            imp.threshold_stop.set_value(f64::from(end));
+        }
+
+        imp.threshold_updating.set(false);
+    }
+
+    fn on_threshold_spin_changed(&self) {
+        let imp = self.imp();
+
+        if imp.threshold_updating.get() {
+            return;
+        }
+
+        // Touching a value while the limit is off implies the user wants it on.
+        if !imp.threshold_enabled.is_active() {
+            imp.threshold_enabled.set_active(true);
+        } else {
+            self.apply_charge_threshold();
+        }
+    }
+
+    fn apply_charge_threshold(&self) {
+        let imp = self.imp();
+
+        if imp.threshold_updating.get() {
+            return;
+        }
+
+        let Some(sysfs_path) = imp.threshold_sysfs_path.borrow().clone() else {
+            return;
+        };
+
+        let (start, end) = if imp.threshold_enabled.is_active() {
+            let mut start = imp.threshold_start.value().round() as u32;
+            let mut end = imp.threshold_stop.value().round() as u32;
+
+            // Enabling the limit without touching the spinners must not write
+            // the "no limit" pair (0/100); fall back to the default window.
+            if start == strategy::DISABLED_START && end == strategy::DISABLED_END {
+                start = strategy::DEFAULT_START;
+                end = strategy::DEFAULT_END;
+
+                imp.threshold_updating.set(true);
+                imp.threshold_start.set_value(f64::from(start));
+                imp.threshold_stop.set_value(f64::from(end));
+                imp.threshold_updating.set(false);
+            }
+
+            (start, end)
+        } else {
+            (strategy::DISABLED_START, strategy::DISABLED_END)
+        };
+
+        if start >= end {
+            imp.threshold_hint.set_subtitle(&i18n(
+                "Start threshold must be lower than the stop threshold.",
+            ));
+            return;
+        }
+
+        imp.threshold_hint.set_subtitle(&i18n(
+            "GNOME’s “Preserve Battery Health” uses fixed limits; custom values set here take precedence.",
+        ));
+
+        let helper = format!("{LIBEXECDIR}/{}", strategy::HELPER_NAME);
+        let sysfs_path = sysfs_path.to_string_lossy().to_string();
+        let start = start.to_string();
+        let end = end.to_string();
+
+        std::thread::spawn(move || {
+            let result = std::process::Command::new("pkexec")
+                .args([
+                    "--disable-internal-agent",
+                    &helper,
+                    "set",
+                    &sysfs_path,
+                    &start,
+                    &end,
+                ])
+                .output();
+
+            match result {
+                Ok(output) if output.status.success() => {
+                    log::debug!("Set battery charge threshold to {start}..{end}");
+                }
+                Ok(output) => {
+                    log::warn!(
+                        "Setting battery charge threshold failed: {}",
+                        String::from_utf8_lossy(&output.stderr).trim()
+                    );
+                }
+                Err(error) => log::warn!("Unable to run battery threshold helper: {error}"),
+            }
+        });
     }
 
     pub fn refresh_page(&self, battery_data: BatteryData) {
@@ -280,6 +438,10 @@ impl ResBattery {
             .add_power_point(battery_data.power_usage.ok(), None);
 
         self.set_tab_usage_string(usage_string);
+
+        // Keep the threshold controls in sync with changes made elsewhere
+        // (for example GNOME's charging mode, which goes through UPower).
+        self.sync_threshold_widgets(&battery_data.inner);
 
         set_subtitle_converted_maybe(
             battery_data.health.ok(),

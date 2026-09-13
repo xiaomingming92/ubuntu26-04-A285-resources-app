@@ -11,3 +11,15 @@ src/config.rs
 .flatpak-builder/
 .vscode/
 vendor
+
+# add-coder 数据库同步备份
+.add/backups/
+
+# add-coder / ADD 治理运行时产物（本地，不入产品提交）
+.env.development
+podman-compose.add.yml
+docker-compose.add.yml
+prisma/
+prisma.config.ts
+node_modules/
+data/postgres/

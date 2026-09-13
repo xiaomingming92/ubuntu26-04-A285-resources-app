@@ -1,0 +1,33 @@
+# ============================================================
+# 电池充电阈值裁决规则（真源）
+# ============================================================
+# 修改规则后运行：python3 caijuehub/transcribe.py
+# 生成文件勿手改：src/caijuehub/strategies/battery.strategy.rs
+
+[battery_threshold]
+# 由 Resources 安装进 libexec 的提权 helper（经 pkexec 调用）
+helper_name = "resources-battery-threshold"
+
+# 标准 power_supply 属性（内核/UPower 都用这一对）
+start_attribute = "charge_control_start_threshold"
+end_attribute = "charge_control_end_threshold"
+
+# ThinkPad 旧别名，作为回退
+fallback_start_attribute = "charge_start_threshold"
+fallback_end_attribute = "charge_stop_threshold"
+
+# 数值范围与步进（GUI 滑杆/微调步长）
+minimum = 0
+maximum = 100
+step = 5
+
+# “最大化充电”（不限制）时写入的值
+disabled_start = 0
+disabled_end = 100
+
+# 打开“限制充电”但还没微调时的默认窗口（与 GNOME/UPower 的 Preserve 对齐）
+default_start = 75
+default_end = 80
+
+# 是否在写入后触发一次 power_supply uevent，让 UPower/GNOME 立即重读
+notify_upower = true

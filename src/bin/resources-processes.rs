@@ -1,6 +1,8 @@
 use anyhow::Result;
 use log::{debug, info, trace};
 use process_data::ProcessData;
+use process_data::sockets::SocketScanConfig;
+use resources::caijuehub::strategies::process as process_rules;
 use ron::ser::PrettyConfig;
 use std::{
     collections::{HashMap, HashSet},
@@ -72,7 +74,19 @@ fn output(
     let start = Instant::now();
 
     trace!("Gathering process data…");
-    let data = ProcessData::all_process_data(non_gpu_fdinfos, non_npu_fdinfos, symlink_cache)?;
+    let socket_config = SocketScanConfig {
+        protocols: process_rules::PORT_PROTOCOLS
+            .iter()
+            .map(|protocol| (*protocol).to_owned())
+            .collect(),
+        listen_only: process_rules::PORT_LISTEN_ONLY,
+    };
+    let data = ProcessData::all_process_data(
+        non_gpu_fdinfos,
+        non_npu_fdinfos,
+        symlink_cache,
+        &socket_config,
+    )?;
 
     let elapsed = start.elapsed();
     trace!(

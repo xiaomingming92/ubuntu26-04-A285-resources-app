@@ -114,16 +114,31 @@ copy_adjust_binary = custom_target(
 )
 
 copy_amdgpu_sensors_binary = custom_target(
-  'cp-amdgpu-sensors-binary',
+    'cp-amdgpu-sensors-binary',
+    depends: cargo_build,
+    build_by_default: true,
+    build_always_stale: true,
+    install: true,
+    install_dir: libexecdir,
+    output: meson.project_name() + '-amdgpu-sensors',
+    command: [
+      'cp',
+      'src' / rust_target / meson.project_name() + '-amdgpu-sensors',
+      '@OUTPUT@',
+    ],
+)
+
+copy_battery_threshold_binary = custom_target(
+  'cp-battery-threshold-binary',
   depends: cargo_build,
   build_by_default: true,
   build_always_stale: true,
   install: true,
   install_dir: libexecdir,
-  output: meson.project_name() + '-amdgpu-sensors',
+  output: meson.project_name() + '-battery-threshold',
   command: [
     'cp',
-    'src' / rust_target / meson.project_name() + '-amdgpu-sensors',
+    'src' / rust_target / meson.project_name() + '-battery-threshold',
     '@OUTPUT@',
   ],
 )

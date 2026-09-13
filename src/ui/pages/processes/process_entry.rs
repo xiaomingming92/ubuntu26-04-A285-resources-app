@@ -6,6 +6,7 @@ use log::trace;
 use process_data::Containerization;
 
 use crate::{
+    caijuehub::strategies::process as process_rules,
     i18n::i18n,
     utils::{TICK_RATE, process::Process},
 };
@@ -33,6 +34,19 @@ mod imp {
 
         #[property(get = Self::user, set = Self::set_user, type = glib::GString)]
         user: Cell<glib::GString>,
+
+        /// Listening ports, formatted for display (e.g. "tcp:3333, tcp:8080").
+        #[property(get = Self::ports, set = Self::set_ports, type = glib::GString)]
+        ports: Cell<glib::GString>,
+
+        #[property(get, set)]
+        uid: Cell<u32>,
+
+        #[property(get, set)]
+        has_listening_port: Cell<bool>,
+
+        #[property(get, set)]
+        orphan: Cell<bool>,
 
         #[property(get = Self::icon, set = Self::set_icon, type = Icon)]
         icon: Cell<Icon>,
@@ -111,6 +125,10 @@ mod imp {
                 name: Cell::new(glib::GString::default()),
                 commandline: Cell::new(glib::GString::default()),
                 user: Cell::new(glib::GString::default()),
+                ports: Cell::new(glib::GString::default()),
+                uid: Cell::new(0),
+                has_listening_port: Cell::new(false),
+                orphan: Cell::new(false),
                 icon: Cell::new(ThemedIcon::new("generic-process").into()),
                 pid: Cell::new(0),
                 cpu_usage: Cell::new(0.0),
@@ -139,7 +157,7 @@ mod imp {
     }
 
     impl ProcessEntry {
-        gstring_getter_setter!(user, commandline, name, containerization);
+        gstring_getter_setter!(user, commandline, name, containerization, ports);
         gstring_option_getter_setter!(cgroup, running_since);
 
         pub fn icon(&self) -> Icon {
@@ -220,6 +238,7 @@ impl ProcessEntry {
             .property("name", &process.display_name)
             .property("commandline", process.data.commandline.replace('\0', " "))
             .property("user", &process.data.user)
+            .property("uid", process.data.uid)
             .property("icon", &process.icon)
             .property("pid", process.data.pid)
             .property("cgroup", process.data.cgroup.clone().map(GString::from))
@@ -234,6 +253,27 @@ impl ProcessEntry {
         trace!("Refreshing ProcessEntry ({})…", process.data.pid);
 
         self.set_icon(&process.icon);
+
+        // Only listening/bound sockets are interesting in the list; client
+        // sockets would just add noise. Deduplicate tcp/tcp6 pairs.
+        let mut listening_ports: Vec<String> = process
+            .data
+            .ports
+            .iter()
+            .filter(|port| port.listening)
+            .map(|port| {
+                format!(
+                    "{}:{}",
+                    port.protocol.trim_end_matches('6'),
+                    port.port
+                )
+            })
+            .collect();
+        listening_ports.sort();
+        listening_ports.dedup();
+        self.set_ports(GString::from(listening_ports.join(", ")));
+        self.set_has_listening_port(!listening_ports.is_empty());
+        self.set_orphan(process.data.parent_pid == process_rules::ORPHAN_PARENT_PID);
 
         self.set_cpu_usage(process.cpu_time_ratio());
         self.set_memory_usage(process.data.memory_usage as u64);

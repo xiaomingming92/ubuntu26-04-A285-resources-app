@@ -1,0 +1,24 @@
+# ============================================================
+# 进程页裁决规则（真源）
+# ============================================================
+# 修改规则后运行：python3 caijuehub/transcribe.py
+# 生成文件勿手改：src/caijuehub/strategies/process.strategy.rs
+
+[ports]
+# 采集哪些 socket 表
+protocols = ["tcp", "tcp6", "udp", "udp6"]
+# 是否只报告处于监听/绑定状态的端口
+listen_only = false
+# 搜索框是否匹配端口
+searchable = true
+
+[ownership]
+# uid <= 该值视为系统进程（与 systemd/logind 口径一致）
+system_uid_max = 999
+# 父进程为该 pid 视为孤儿（被 init 收养）
+orphan_parent_pid = 1
+
+[grouping]
+# none | user | app
+default = "user"
+order = ["user", "app"]

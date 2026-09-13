@@ -1,6 +1,7 @@
 pub mod gpu_usage;
 pub mod npu_usage;
 pub mod pci_slot;
+pub mod sockets;
 
 use anyhow::{Context, Result, bail};
 use lazy_regex::{Lazy, Regex, lazy_regex};
@@ -21,6 +22,7 @@ use std::time::SystemTime;
 
 use crate::gpu_usage::{GpuIdentifier, GpuUsageStats, IntegerPercentage};
 use crate::npu_usage::NpuUsageStats;
+use crate::sockets::{ProcessPort, SocketScanConfig};
 
 const STAT_OFFSET: usize = 2; // we split the stat contents where the executable name ends, which is the second element
 const STAT_PARENT_PID: usize = 3 - STAT_OFFSET;
@@ -219,6 +221,7 @@ struct Fdinfo {
 pub struct ProcessData {
     pub pid: libc::pid_t,
     pub parent_pid: libc::pid_t,
+    pub uid: u32,
     pub user: String,
     pub comm: String,
     pub commandline: String,
@@ -237,6 +240,8 @@ pub struct ProcessData {
     pub gpu_usage_stats: BTreeMap<GpuIdentifier, GpuUsageStats>,
     pub npu_usage_stats: BTreeMap<PciSlot, NpuUsageStats>,
     pub appimage_path: Option<String>,
+    /// Ports this process owns (TCP LISTEN / bound UDP), when readable.
+    pub ports: Vec<ProcessPort>,
 }
 
 impl ProcessData {
@@ -328,8 +333,11 @@ impl ProcessData {
         non_gpu_fdinfos: &mut HashSet<(libc::pid_t, usize)>,
         non_npu_fdinfos: &mut HashSet<(libc::pid_t, usize)>,
         symlink_cache: &mut HashMap<(libc::pid_t, usize), PathBuf>,
+        socket_config: &SocketScanConfig,
     ) -> Result<Vec<Self>> {
         Self::update_nvidia_stats();
+
+        let socket_map = sockets::collect(socket_config);
 
         let mut process_data = vec![];
         for entry in std::fs::read_dir("/proc")?.flatten() {
@@ -340,6 +348,7 @@ impl ProcessData {
                     non_gpu_fdinfos,
                     non_npu_fdinfos,
                     symlink_cache,
+                    &socket_map,
                 );
 
                 if let Ok(data) = data {
@@ -356,6 +365,7 @@ impl ProcessData {
         non_gpu_fdinfos: &mut HashSet<(libc::pid_t, usize)>,
         non_npu_fdinfos: &mut HashSet<(libc::pid_t, usize)>,
         symlink_cache: &mut HashMap<(libc::pid_t, usize), PathBuf>,
+        socket_map: &HashMap<u64, ProcessPort>,
     ) -> Result<Self> {
         let proc_path = proc_path.as_ref();
         let pid = proc_path
@@ -377,11 +387,18 @@ impl ProcessData {
 
         let io = read_parsed::<String>(proc_path.join("io")).ok();
 
+        let uid = Self::get_uid(&status)?;
+
         let user = USERS_CACHE
-            .get(&Self::get_uid(&status)?)
+            .get(&uid)
             .cloned()
             .unwrap_or(String::from("root"));
         trace!("User of {pid} determined to be {user}");
+
+        let ports = sockets::ports_for_pid(pid, socket_map);
+        if !ports.is_empty() {
+            trace!("Ports of {pid} determined to be {ports:?}");
+        }
 
         let stat = stat
             .split(')') // since we don't care about the pid or the executable name, split after the executable name to make our life easier
@@ -539,6 +556,7 @@ impl ProcessData {
         Ok(Self {
             pid,
             parent_pid,
+            uid,
             user,
             comm,
             commandline,
@@ -557,6 +575,7 @@ impl ProcessData {
             gpu_usage_stats,
             npu_usage_stats,
             appimage_path,
+            ports,
         })
     }
 
