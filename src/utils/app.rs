@@ -30,10 +30,6 @@ use super::{
     snapd,
 };
 
-/// This contains the cgroups of desktop environments. If a process has this as its cgroup, its parent's cgroup will be
-/// considered instead to enhance app detection
-const DESKTOP_ENVIRONMENT_CGROUPS: &[&str] = &["org.gnome.Shell"];
-
 // This contains executable names that are blocklisted from being recognized as applications
 const DESKTOP_EXEC_BLOCKLIST: &[&str] = &["bash", "zsh", "fish", "sh", "ksh", "flatpak"];
 
