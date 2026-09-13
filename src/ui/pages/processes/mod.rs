@@ -127,6 +127,8 @@ mod imp {
         pub popped_over_process: RefCell<Option<ProcessEntry>>,
 
         pub columns: RefCell<Vec<ColumnViewColumn>>,
+        /// Users whose group is collapsed in the grouped process view.
+        pub collapsed_groups: RefCell<std::collections::HashSet<String>>,
 
         #[property(get)]
         uses_progress_bar: Cell<bool>,
@@ -196,6 +198,7 @@ mod imp {
                 tab_id: Cell::new(glib::GString::from(TAB_ID)),
                 popped_over_process: Default::default(),
                 columns: Default::default(),
+                collapsed_groups: Default::default(),
                 graph_locked_max_y: Cell::new(true),
                 primary_ord: Cell::new(PROCESSES_PRIMARY_ORD),
                 secondary_ord: Default::default(),
@@ -450,6 +453,23 @@ impl ResProcesses {
         ));
 
         widget.add_controller(secondary_click);
+
+        // Clicking a group header collapses/expands that group.
+        let primary_click = gtk::GestureClick::new();
+        primary_click.connect_released(clone!(
+            #[weak]
+            item,
+            #[weak(rename_to = this)]
+            self,
+            move |_, _, _, _| {
+                if let Some(entry) = item.item().and_downcast::<ProcessEntry>() {
+                    if entry.is_group_header() {
+                        this.toggle_group_collapsed(&entry.user().to_string());
+                    }
+                }
+            }
+        ));
+        widget.add_controller(primary_click);
     }
 
     pub fn setup_widgets(&self) {
@@ -1031,6 +1051,15 @@ impl ResProcesses {
             return true;
         }
 
+        // Children of a collapsed group are hidden until it is expanded again.
+        if imp
+            .collapsed_groups
+            .borrow()
+            .contains(&item.user().to_string())
+        {
+            return false;
+        }
+
         if imp.listening_filter.is_active() && !item.has_listening_port() {
             return false;
         }
@@ -1065,6 +1094,20 @@ impl ResProcesses {
         }
     }
 
+    fn toggle_group_collapsed(&self, user: &str) {
+        let imp = self.imp();
+
+        {
+            let mut collapsed = imp.collapsed_groups.borrow_mut();
+            if !collapsed.insert(user.to_owned()) {
+                collapsed.remove(user);
+            }
+        }
+
+        self.rebuild_group_headers();
+        self.refilter();
+    }
+
     fn rebuild_group_headers(&self) {
         let imp = self.imp();
         let store = imp.store.borrow_mut();
@@ -1078,16 +1121,35 @@ impl ResProcesses {
             return;
         }
 
-        let mut groups: std::collections::BTreeMap<String, u32> = std::collections::BTreeMap::new();
+        #[derive(Default, Clone)]
+        struct GroupTotals {
+            count: u32,
+            cpu: f32,
+            memory: u64,
+        }
+
+        let mut groups: std::collections::BTreeMap<String, GroupTotals> =
+            std::collections::BTreeMap::new();
         store.iter::<ProcessEntry>().flatten().for_each(|entry| {
-            *groups.entry(entry.user().to_string()).or_default() += 1;
+            let totals = groups.entry(entry.user().to_string()).or_default();
+            totals.count += 1;
+            totals.cpu += entry.cpu_usage();
+            totals.memory = totals.memory.saturating_add(entry.memory_usage());
         });
 
-        for (user, count) in groups {
+        for (user, totals) in groups {
+            let collapsed = imp.collapsed_groups.borrow().contains(&user);
+            let arrow = if collapsed { "▸" } else { "▾" };
+
             let header: ProcessEntry = glib::Object::new();
             header.set_is_group_header(true);
             header.set_user(glib::GString::from(user.clone()));
-            header.set_name(glib::GString::from(format!("{user} ({count})")));
+            header.set_name(glib::GString::from(format!(
+                "{arrow} {user} ({})",
+                totals.count
+            )));
+            header.set_cpu_usage(totals.cpu);
+            header.set_memory_usage(totals.memory);
             store.append(&header);
         }
 
