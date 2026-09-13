@@ -99,6 +99,8 @@ mod imp {
         #[template_child]
         pub group_by_user: TemplateChild<gtk::ToggleButton>,
         #[template_child]
+        pub group_by_app: TemplateChild<gtk::ToggleButton>,
+        #[template_child]
         pub processes_scrolled_window: TemplateChild<gtk::ScrolledWindow>,
         #[template_child]
         pub options_button: TemplateChild<gtk::Button>,
@@ -174,6 +176,7 @@ mod imp {
                 own_user_filter: Default::default(),
                 orphan_filter: Default::default(),
                 group_by_user: Default::default(),
+                group_by_app: Default::default(),
                 processes_scrolled_window: Default::default(),
                 options_button: Default::default(),
                 information_button: Default::default(),
@@ -884,7 +887,24 @@ impl ResProcesses {
         imp.group_by_user.connect_toggled(clone!(
             #[weak(rename_to = this)]
             self,
-            move |_| {
+            move |toggle| {
+                let imp = this.imp();
+                if toggle.is_active() && imp.group_by_app.is_active() {
+                    imp.group_by_app.set_active(false);
+                }
+                this.rebuild_group_headers();
+                this.refilter();
+            }
+        ));
+
+        imp.group_by_app.connect_toggled(clone!(
+            #[weak(rename_to = this)]
+            self,
+            move |toggle| {
+                let imp = this.imp();
+                if toggle.is_active() && imp.group_by_user.is_active() {
+                    imp.group_by_user.set_active(false);
+                }
                 this.rebuild_group_headers();
                 this.refilter();
             }
@@ -1052,11 +1072,15 @@ impl ResProcesses {
         }
 
         // Children of a collapsed group are hidden until it is expanded again.
-        if imp
-            .collapsed_groups
-            .borrow()
-            .contains(&item.user().to_string())
-        {
+        let group_key = if imp.group_by_app.is_active() {
+            item.cgroup()
+                .map(|cgroup| cgroup.to_string())
+                .filter(|cgroup| !cgroup.is_empty())
+                .unwrap_or_else(|| item.name().to_string())
+        } else {
+            item.user().to_string()
+        };
+        if imp.collapsed_groups.borrow().contains(&group_key) {
             return false;
         }
 
@@ -1115,11 +1139,25 @@ impl ResProcesses {
         // Drop previously generated headers; real rows are untouched.
         store.retain(|object| !object.downcast_ref::<ProcessEntry>().unwrap().is_group_header());
 
-        if !imp.group_by_user.is_active() {
+        let group_by_app = imp.group_by_app.is_active();
+
+        if !imp.group_by_user.is_active() && !group_by_app {
             let sorter = imp.column_view.borrow().sorter();
             imp.sort_model.borrow().set_sorter(sorter.as_ref());
             return;
         }
+
+        let key_of = |entry: &ProcessEntry| {
+            if group_by_app {
+                entry
+                    .cgroup()
+                    .map(|cgroup| cgroup.to_string())
+                    .filter(|cgroup| !cgroup.is_empty())
+                    .unwrap_or_else(|| entry.name().to_string())
+            } else {
+                entry.user().to_string()
+            }
+        };
 
         #[derive(Default, Clone)]
         struct GroupTotals {
@@ -1131,7 +1169,7 @@ impl ResProcesses {
         let mut groups: std::collections::BTreeMap<String, GroupTotals> =
             std::collections::BTreeMap::new();
         store.iter::<ProcessEntry>().flatten().for_each(|entry| {
-            let totals = groups.entry(entry.user().to_string()).or_default();
+            let totals = groups.entry(key_of(&entry)).or_default();
             totals.count += 1;
             totals.cpu += entry.cpu_usage();
             totals.memory = totals.memory.saturating_add(entry.memory_usage());
@@ -1153,14 +1191,25 @@ impl ResProcesses {
             store.append(&header);
         }
 
-        let sorter = gtk::CustomSorter::new(|a, b| {
+        let sorter = gtk::CustomSorter::new(move |a, b| {
             let a = a.downcast_ref::<ProcessEntry>().unwrap();
             let b = b.downcast_ref::<ProcessEntry>().unwrap();
 
-            a.user()
-                .to_string()
+            let key_of = |entry: &ProcessEntry| {
+                if group_by_app {
+                    entry
+                        .cgroup()
+                        .map(|cgroup| cgroup.to_string())
+                        .filter(|cgroup| !cgroup.is_empty())
+                        .unwrap_or_else(|| entry.name().to_string())
+                } else {
+                    entry.user().to_string()
+                }
+            };
+
+            key_of(a)
                 .to_lowercase()
-                .cmp(&b.user().to_string().to_lowercase())
+                .cmp(&key_of(b).to_lowercase())
                 // Within a user, the header comes first.
                 .then(b.is_group_header().cmp(&a.is_group_header()))
                 .then(a.name().to_lowercase().cmp(&b.name().to_lowercase()))
