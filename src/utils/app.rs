@@ -656,15 +656,16 @@ impl AppsContext {
         }
 
         // ↓ look for whether we can find an ID in the cgroup
-        if DESKTOP_ENVIRONMENT_CGROUPS.contains(&process.data.cgroup.as_deref().unwrap_or_default())
+        // Inherit the parent's app association. Previously this was gated on the
+        // process living in a desktop-environment cgroup, which made IDE-spawned
+        // helper processes (Qoder/Codex MCP servers, etc.) fall back to the
+        // generic icon even though their parent is a known app.
+        if let Some(parent) = self
+            .apps
+            .values()
+            .find(|app| app.processes.contains(&process.data.parent_pid))
         {
-            if let Some(parent) = self
-                .apps
-                .values()
-                .find(|app| app.processes.contains(&process.data.parent_pid))
-            {
-                return AppAssociation::Resolved(parent.id.clone());
-            }
+            return AppAssociation::Resolved(parent.id.clone());
         }
 
         // ↓ look for whether we can associate this process with a snap
