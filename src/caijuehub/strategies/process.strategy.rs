@@ -20,3 +20,5 @@ pub const ORPHAN_EXCLUDE_COMM: &[&str] = &["systemd"];
 pub const DEFAULT_GROUPING: &str = "user";
 
 pub const GROUPING_ORDER: &[&str] = &["user", "app"];
+
+pub const ICON_COMMANDLINE_PATTERNS: &[(&str, &str)] = &[("mcp-server", "applications-development-symbolic"), ("mcp_server", "applications-development-symbolic"), ("modelcontextprotocol", "applications-development-symbolic"), ("codex", "chatgpt"), ("chatgpt", "chatgpt")];

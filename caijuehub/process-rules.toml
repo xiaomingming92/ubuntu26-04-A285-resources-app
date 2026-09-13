@@ -24,3 +24,8 @@ orphan_exclude_comm = ["systemd"]
 # none | user | app
 default = "user"
 order = ["user", "app"]
+
+[icons]
+# 没有匹配到 .desktop 应用时，按命令行子串指定图标（用于 IDE 拉起的 MCP/helper）
+# 只写图标主题里真实存在的名字；例如装了带图标的 Qoder 后可加 "qoder" = "qoder"
+commandline_icons = { "mcp-server" = "applications-development-symbolic", "mcp_server" = "applications-development-symbolic", "modelcontextprotocol" = "applications-development-symbolic", "codex" = "chatgpt", "chatgpt" = "chatgpt" }

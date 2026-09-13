@@ -20,6 +20,7 @@ use process_data::{
 };
 
 use crate::i18n::i18n;
+use crate::caijuehub::strategies::process as process_rules;
 
 use futures::future::{FutureExt, LocalBoxFuture, Shared};
 
@@ -899,6 +900,19 @@ impl AppsContext {
                             .get_mut(&app_id)
                             .unwrap()
                             .add_process(&mut new_process);
+
+                        // No .desktop app matched: fall back to a rule-driven icon
+                        // based on the command line (e.g. IDE-spawned MCP servers).
+                        if app_id.is_none() {
+                            let commandline = new_process.data.commandline.to_lowercase();
+                            if let Some(icon_name) = process_rules::ICON_COMMANDLINE_PATTERNS
+                                .iter()
+                                .find(|(pattern, _)| commandline.contains(*pattern))
+                                .map(|(_, icon_name)| *icon_name)
+                            {
+                                new_process.icon = ThemedIcon::new(icon_name).into();
+                            }
+                        }
                     }
                     AppAssociation::Pending(fut) => {
                         self.deferred.insert(pid, fut);

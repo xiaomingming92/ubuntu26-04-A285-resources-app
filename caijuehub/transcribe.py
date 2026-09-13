@@ -199,6 +199,13 @@ def generate_process(rules: dict) -> str:
         + rust_str_slice(grouping.get("order", ["user", "app"]))
         + ";",
         "",
+        "pub const ICON_COMMANDLINE_PATTERNS: &[(&str, &str)] = &["
+        + ", ".join(
+            f"({rust_str(pattern)}, {rust_str(icon)})"
+            for pattern, icon in rules.get("icons", {}).get("commandline_icons", {}).items()
+        )
+        + "];",
+        "",
     ]
     return "\n".join(lines)
 
