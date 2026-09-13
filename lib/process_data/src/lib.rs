@@ -25,6 +25,7 @@ use crate::npu_usage::NpuUsageStats;
 use crate::sockets::{ProcessPort, SocketScanConfig};
 
 const STAT_OFFSET: usize = 2; // we split the stat contents where the executable name ends, which is the second element
+const STAT_STATE: usize = 0; // "R", "S", "Z", …
 const STAT_PARENT_PID: usize = 3 - STAT_OFFSET;
 const STAT_USER_CPU_TIME: usize = 13 - STAT_OFFSET;
 const STAT_SYSTEM_CPU_TIME: usize = 14 - STAT_OFFSET;
@@ -242,6 +243,8 @@ pub struct ProcessData {
     pub appimage_path: Option<String>,
     /// Ports this process owns (TCP LISTEN / bound UDP), when readable.
     pub ports: Vec<ProcessPort>,
+    /// True for zombie/defunct processes (`Z` in /proc/<pid>/stat).
+    pub zombie: bool,
 }
 
 impl ProcessData {
@@ -412,6 +415,10 @@ impl ProcessData {
         let comm = comm.replace('\n', "");
         trace!("Comm of {pid} determined to be {comm}");
 
+        let zombie = stat
+            .get(STAT_STATE)
+            .is_some_and(|state| state.starts_with('Z'));
+
         let parent_pid = stat
             .get(STAT_PARENT_PID)
             .context("wrong stat file format")
@@ -576,6 +583,7 @@ impl ProcessData {
             npu_usage_stats,
             appimage_path,
             ports,
+            zombie,
         })
     }
 

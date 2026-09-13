@@ -52,6 +52,9 @@ mod imp {
         #[property(get, set)]
         is_group_header: Cell<bool>,
 
+        #[property(get, set)]
+        zombie: Cell<bool>,
+
         #[property(get = Self::icon, set = Self::set_icon, type = Icon)]
         icon: Cell<Icon>,
 
@@ -134,6 +137,7 @@ mod imp {
                 has_listening_port: Cell::new(false),
                 orphan: Cell::new(false),
                 is_group_header: Cell::new(false),
+                zombie: Cell::new(false),
                 icon: Cell::new(ThemedIcon::new("generic-process").into()),
                 pid: Cell::new(0),
                 cpu_usage: Cell::new(0.0),
@@ -279,6 +283,7 @@ impl ProcessEntry {
         self.set_ports(GString::from(listening_ports.join(", ")));
         self.set_has_listening_port(!listening_ports.is_empty());
         self.set_orphan(process.data.parent_pid == process_rules::ORPHAN_PARENT_PID);
+        self.set_zombie(process.data.zombie);
 
         self.set_cpu_usage(process.cpu_time_ratio());
         self.set_memory_usage(process.data.memory_usage as u64);

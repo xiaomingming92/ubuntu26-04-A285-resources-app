@@ -97,6 +97,8 @@ mod imp {
         #[template_child]
         pub orphan_filter: TemplateChild<gtk::ToggleButton>,
         #[template_child]
+        pub zombie_filter: TemplateChild<gtk::ToggleButton>,
+        #[template_child]
         pub group_by_user: TemplateChild<gtk::ToggleButton>,
         #[template_child]
         pub group_by_app: TemplateChild<gtk::ToggleButton>,
@@ -175,6 +177,7 @@ mod imp {
                 listening_filter: Default::default(),
                 own_user_filter: Default::default(),
                 orphan_filter: Default::default(),
+                zombie_filter: Default::default(),
                 group_by_user: Default::default(),
                 group_by_app: Default::default(),
                 processes_scrolled_window: Default::default(),
@@ -488,6 +491,7 @@ impl ResProcesses {
 
         let column_view = imp.column_view.borrow();
         column_view.set_tab_behavior(gtk::ListTabBehavior::Cell);
+        column_view.set_show_column_separators(true);
         let columns = imp.columns.borrow_mut();
 
         let store = gio::ListStore::new::<ProcessEntry>();
@@ -876,6 +880,7 @@ impl ResProcesses {
             imp.listening_filter.clone(),
             imp.own_user_filter.clone(),
             imp.orphan_filter.clone(),
+            imp.zombie_filter.clone(),
         ] {
             toggle.connect_toggled(clone!(
                 #[weak(rename_to = this)]
@@ -1093,6 +1098,10 @@ impl ResProcesses {
         }
 
         if imp.orphan_filter.is_active() && !item.orphan() {
+            return false;
+        }
+
+        if imp.zombie_filter.is_active() && !item.zombie() {
             return false;
         }
 
@@ -1467,7 +1476,9 @@ impl ResProcesses {
 
         name_col.set_resizable(true);
 
-        name_col.set_expand(true);
+        // Keep the name column resizable by the user instead of letting it
+        // always absorb the remaining width.
+        name_col.set_expand(false);
 
         name_col_factory.connect_setup(clone!(
             #[weak(rename_to = this)]
