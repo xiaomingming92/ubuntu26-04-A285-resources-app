@@ -17,6 +17,8 @@ searchable = true
 system_uid_max = 999
 # 父进程为该 pid 视为孤儿（被 init 收养）
 orphan_parent_pid = 1
+# ppid=1 但这些进程是正常的会话管理器，不算孤儿
+orphan_exclude_comm = ["systemd"]
 
 [grouping]
 # none | user | app

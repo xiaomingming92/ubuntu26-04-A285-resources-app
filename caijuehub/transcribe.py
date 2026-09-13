@@ -188,6 +188,10 @@ def generate_process(rules: dict) -> str:
         "pub const ORPHAN_PARENT_PID: i32 = "
         f"{int(ownership.get('orphan_parent_pid', 1))};",
         "",
+        "pub const ORPHAN_EXCLUDE_COMM: &[&str] = "
+        + rust_str_slice(ownership.get("orphan_exclude_comm", ["systemd"]))
+        + ";",
+        "",
         "pub const DEFAULT_GROUPING: &str = "
         f"{rust_str(grouping.get('default', 'user'))};",
         "",

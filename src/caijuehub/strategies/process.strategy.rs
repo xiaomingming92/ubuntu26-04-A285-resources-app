@@ -15,6 +15,8 @@ pub const SYSTEM_UID_MAX: u32 = 999;
 
 pub const ORPHAN_PARENT_PID: i32 = 1;
 
+pub const ORPHAN_EXCLUDE_COMM: &[&str] = &["systemd"];
+
 pub const DEFAULT_GROUPING: &str = "user";
 
 pub const GROUPING_ORDER: &[&str] = &["user", "app"];

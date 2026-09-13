@@ -282,7 +282,10 @@ impl ProcessEntry {
         listening_ports.dedup();
         self.set_ports(GString::from(listening_ports.join(", ")));
         self.set_has_listening_port(!listening_ports.is_empty());
-        self.set_orphan(process.data.parent_pid == process_rules::ORPHAN_PARENT_PID);
+        self.set_orphan(
+            process.data.parent_pid == process_rules::ORPHAN_PARENT_PID
+                && !process_rules::ORPHAN_EXCLUDE_COMM.contains(&process.data.comm.as_str()),
+        );
         self.set_zombie(process.data.zombie);
 
         self.set_cpu_usage(process.cpu_time_ratio());
