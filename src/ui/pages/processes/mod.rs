@@ -97,6 +97,8 @@ mod imp {
         #[template_child]
         pub orphan_filter: TemplateChild<gtk::ToggleButton>,
         #[template_child]
+        pub group_by_user: TemplateChild<gtk::ToggleButton>,
+        #[template_child]
         pub processes_scrolled_window: TemplateChild<gtk::ScrolledWindow>,
         #[template_child]
         pub options_button: TemplateChild<gtk::Button>,
@@ -169,6 +171,7 @@ mod imp {
                 listening_filter: Default::default(),
                 own_user_filter: Default::default(),
                 orphan_filter: Default::default(),
+                group_by_user: Default::default(),
                 processes_scrolled_window: Default::default(),
                 options_button: Default::default(),
                 information_button: Default::default(),
@@ -857,6 +860,25 @@ impl ResProcesses {
                 move |_| this.refilter()
             ));
         }
+
+        imp.group_by_user.connect_toggled(clone!(
+            #[weak(rename_to = this)]
+            self,
+            move |toggle| {
+                let imp = this.imp();
+                let columns = imp.columns.borrow();
+                let column_view = imp.column_view.borrow();
+
+                if toggle.is_active() {
+                    // columns[0] is the name column, columns[1] the user column.
+                    if let Some(user_column) = columns.get(1) {
+                        column_view.sort_by_column(Some(user_column), gtk::SortType::Ascending);
+                    }
+                } else if let Some(name_column) = columns.get(0) {
+                    column_view.sort_by_column(Some(name_column), gtk::SortType::Ascending);
+                }
+            }
+        ));
 
         let event_controller = EventControllerKey::new();
         event_controller.connect_key_released(clone!(
