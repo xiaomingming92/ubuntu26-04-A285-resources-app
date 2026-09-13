@@ -141,8 +141,8 @@
             </child>
             <child>
               <object class="GtkToggleButton" id="zombie_filter">
-                <property name="icon-name">face-dead-symbolic</property>
                 <property name="tooltip-text" translatable="yes">Only zombie processes</property>
+                <property name="label">Z</property>
                 <style>
                   <class name="flat"/>
                 </style>
