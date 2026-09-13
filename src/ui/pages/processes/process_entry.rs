@@ -48,6 +48,10 @@ mod imp {
         #[property(get, set)]
         orphan: Cell<bool>,
 
+        /// Marks a synthetic group header row (no real process behind it).
+        #[property(get, set)]
+        is_group_header: Cell<bool>,
+
         #[property(get = Self::icon, set = Self::set_icon, type = Icon)]
         icon: Cell<Icon>,
 
@@ -129,6 +133,7 @@ mod imp {
                 uid: Cell::new(0),
                 has_listening_port: Cell::new(false),
                 orphan: Cell::new(false),
+                is_group_header: Cell::new(false),
                 icon: Cell::new(ThemedIcon::new("generic-process").into()),
                 pid: Cell::new(0),
                 cpu_usage: Cell::new(0.0),

@@ -864,19 +864,9 @@ impl ResProcesses {
         imp.group_by_user.connect_toggled(clone!(
             #[weak(rename_to = this)]
             self,
-            move |toggle| {
-                let imp = this.imp();
-                let columns = imp.columns.borrow();
-                let column_view = imp.column_view.borrow();
-
-                if toggle.is_active() {
-                    // columns[0] is the name column, columns[1] the user column.
-                    if let Some(user_column) = columns.get(1) {
-                        column_view.sort_by_column(Some(user_column), gtk::SortType::Ascending);
-                    }
-                } else if let Some(name_column) = columns.get(0) {
-                    column_view.sort_by_column(Some(name_column), gtk::SortType::Ascending);
-                }
+            move |_| {
+                this.rebuild_group_headers();
+                this.refilter();
             }
         ));
 
@@ -1036,6 +1026,11 @@ impl ResProcesses {
 
         let item = obj.downcast_ref::<ProcessEntry>().unwrap();
 
+        // Synthetic group headers always stay visible.
+        if item.is_group_header() {
+            return true;
+        }
+
         if imp.listening_filter.is_active() && !item.has_listening_port() {
             return false;
         }
@@ -1070,6 +1065,49 @@ impl ResProcesses {
         }
     }
 
+    fn rebuild_group_headers(&self) {
+        let imp = self.imp();
+        let store = imp.store.borrow_mut();
+
+        // Drop previously generated headers; real rows are untouched.
+        store.retain(|object| !object.downcast_ref::<ProcessEntry>().unwrap().is_group_header());
+
+        if !imp.group_by_user.is_active() {
+            let sorter = imp.column_view.borrow().sorter();
+            imp.sort_model.borrow().set_sorter(sorter.as_ref());
+            return;
+        }
+
+        let mut groups: std::collections::BTreeMap<String, u32> = std::collections::BTreeMap::new();
+        store.iter::<ProcessEntry>().flatten().for_each(|entry| {
+            *groups.entry(entry.user().to_string()).or_default() += 1;
+        });
+
+        for (user, count) in groups {
+            let header: ProcessEntry = glib::Object::new();
+            header.set_is_group_header(true);
+            header.set_user(glib::GString::from(user.clone()));
+            header.set_name(glib::GString::from(format!("{user} ({count})")));
+            store.append(&header);
+        }
+
+        let sorter = gtk::CustomSorter::new(|a, b| {
+            let a = a.downcast_ref::<ProcessEntry>().unwrap();
+            let b = b.downcast_ref::<ProcessEntry>().unwrap();
+
+            a.user()
+                .to_string()
+                .to_lowercase()
+                .cmp(&b.user().to_string().to_lowercase())
+                // Within a user, the header comes first.
+                .then(b.is_group_header().cmp(&a.is_group_header()))
+                .then(a.name().to_lowercase().cmp(&b.name().to_lowercase()))
+                .into()
+        });
+
+        imp.sort_model.borrow().set_sorter(Some(&sorter));
+    }
+
     pub fn get_selected_process_entries(&self) -> Vec<ProcessEntry> {
         let imp = self.imp();
 
@@ -1095,6 +1133,9 @@ impl ResProcesses {
             }
 
             return_vec
+                .into_iter()
+                .filter(|entry| !entry.is_group_header())
+                .collect()
         } else {
             Vec::default()
         }
@@ -1122,6 +1163,10 @@ impl ResProcesses {
 
         // change process entries of processes that have existed before
         store.iter::<ProcessEntry>().flatten().for_each(|object| {
+            if object.is_group_header() {
+                return;
+            }
+
             let item_pid = object.pid();
             if let Some(process) = apps_context.get_process(item_pid) {
                 object.update(process);
@@ -1156,7 +1201,8 @@ impl ResProcesses {
 
         // remove recently deceased processes
         store.retain(|object| {
-            !pids_to_remove.contains(&object.clone().downcast::<ProcessEntry>().unwrap().pid())
+            let entry = object.clone().downcast::<ProcessEntry>().unwrap();
+            entry.is_group_header() || !pids_to_remove.contains(&entry.pid())
         });
 
         // add the newly started process to the store
@@ -1170,13 +1216,17 @@ impl ResProcesses {
             .collect();
         store.extend_from_slice(&items);
 
+        let item_count = store.n_items();
+        drop(store);
+        self.rebuild_group_headers();
+
         if let Some(sorter) = imp.column_view.borrow().sorter() {
             sorter.changed(gtk::SorterChange::Different);
         }
 
         self.set_tab_usage_string(i18n_f(
             "Running Processes: {}",
-            &[&(store.n_items()).to_string()],
+            &[&(item_count).to_string()],
         ));
     }
 
